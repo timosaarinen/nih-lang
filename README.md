@@ -78,3 +78,15 @@ nethack-putka:
   #.$..|
   ######
 ~~~
+
+# Development
+
+- Node/TypeScript project with ES Modules, testing, and linting
+- node/tsc/esnext/esm/eslint/jest/prettier
+- install ESLint and Prettier extensions for Visual Studio Code
+
+## Just do it
+
+~~~
+$ npm run build:test:start
+~~~

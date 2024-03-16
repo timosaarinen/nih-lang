@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "target": "esnext",
+    "outDir": "dist",
+    "sourceMap": true,
+    "module": "ESNext",
+    "lib": ["ESNext"],
+    "esModuleInterop": true,
+
+    "allowJs": true,
+    "allowSyntheticDefaultImports": false,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "useDefineForClassFields": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "moduleResolution": "node",
+
+    /* Linting */
+    "alwaysStrict": true,
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "compileOnSave": true,
+  "exclude": ["./src/**/*.test.ts"],
+  "include": ["./src/**/*"]
+}
