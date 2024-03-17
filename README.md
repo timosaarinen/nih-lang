@@ -1,10 +1,10 @@
 # NIH, a programming language
 
 - A next-generation programming language inspired by the subjective best of all the programming languages since Plankalkül.
-- Persistance with structured S-expression code - tabs and spaces are not stored unless quoted - "Ends the Tabs vs Spaces religious war once and for all".
+- Persistence with structured S-expression code - tabs and spaces are not stored unless quoted - "Ends the Tabs vs Spaces religious war once and for all".
 - HTML5/Web/Cloud What You See Is What You Get Integrated Development Environment (WYSIWYG IDE) the intended daily development platform - not included here.
 - "Batteries included" vision - package manager and build/test/lint/autoformat/CI/CD integrated into the language itself.
-- Benovalent dictatorship in language design by the author. Sorry, committees not allowed. Ever. Maybe. Strong Maybe.
+- Benevolent dictatorship in language design, as determined by the author. Sorry, committees not allowed. Ever. Maybe. Strong Maybe.
 - Open-source, MIT license - "Monetizing a programming language directly is a folly".
 
 ## Inspirations (and Selective Not-Inspirations)
@@ -58,7 +58,7 @@ print("The answer to life, universe =", 6*7)
 
 ### String Interpolation
 ~~~
-print 'The answer to life, universe = $(6*7), $yourname')
+print 'Hey $yourname, the answer to life, universe and everything is.. $(6*7).'
 ~~~
 
 ### S-Expressions
@@ -70,7 +70,7 @@ print 'The answer to life, universe = $(6*7), $yourname')
 ~~~
 Note that inside quotes, nothing is different, always UTF-8.
 ~~~
-(print 'The answer to life, universe = $(6*7), $yourname')
+(print 'Hey $yourname, the answer to life, universe and everything is.. $(6*7).')
 ~~~
 ### Variables
 
@@ -122,6 +122,10 @@ nethack-putka:
   ######
 ~~~
 
+# Getting Started
+
+TODO
+
 # Development
 
 - Node/TypeScript project with ES Modules, testing, and linting
@@ -133,3 +137,7 @@ nethack-putka:
 ~~~
 $ npm run build:test:start
 ~~~
+
+# Contributing
+
+Thrilled that you're interested in contributing to NIH! This project thrives on community feedback and the diverse perspectives of programmers like you.
