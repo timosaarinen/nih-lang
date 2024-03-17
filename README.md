@@ -51,7 +51,7 @@ print 'Hiihoo'
 ~~~
 print 'The answer to life, universe is...' (6*7)
 ~~~
-You CAN use parens, but not the default. Necessary when ambiguous otherwise. " or ', you decide
+You can use parens, but not the default. Necessary when ambiguous otherwise. " or ', you decide.
 ~~~
 print("The answer to life, universe =", 6*7)
 ~~~
@@ -87,7 +87,7 @@ mutable numclicks u64 = 0
 ~~~
 ### One-liner function declarations
 ~~~
-foo() = bar @returns the value of 'bar'
+foo() = bar
 ~~~
 
 Math-style factors/multipliers without *.
