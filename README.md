@@ -132,6 +132,16 @@ TODO
 - node/tsc/esnext/esm/eslint/jest/prettier
 - install ESLint and Prettier extensions for Visual Studio Code
 
+# TODO
+
+- lex, parse, emitjs, evaljs passes
+- webassembly emit later
+- no AST eval needed, skip it, eval JS
+- OT: for Naama, live coding interface, compile to JS on every char change, eval JS, output as overlay to text input area so works on portrait phones too
+- KISS lexical analyzer and AST gen parser.. lexinit,getnexttoken n,allow to add code for repl - keep the line start pos, 
+- emit JS, add prefix lib/boot code, emit AST to JS
+
+
 ## Just do it
 
 ~~~
