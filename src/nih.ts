@@ -20,3 +20,6 @@ console.log("------------------------");
 
 let jscode = emitJs(ast);
 console.log(jscode);
+console.log("------------------------");
+
+eval(jscode);
