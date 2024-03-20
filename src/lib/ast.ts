@@ -9,7 +9,7 @@ export namespace AST {
   export function list()              : Node { return { type: 'list', children: new Array<Node> } }
   export function ident(name: string) : Node { return { type: 'ident', str: name } }
   export function strlit(str: string) : Node { return { type: 'strlit', str: str } }
-  export function numlit(num: number) : Node { return { type: 'strlit', num: num } }
+  export function numlit(num: number) : Node { return { type: 'numlit', num: num } }
   export function call(name: string)  : Node { return { type: 'call', str: name } }
 
   export function id(n: Node): string { return n.str ? n.str : "<unknown identifier>"; }
