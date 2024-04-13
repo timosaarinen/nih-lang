@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "tsc",
-    "start": "node --enable-source-maps dist/nih.js",
+    "start": "node --enable-source-maps dist/nih.js example/hiihoo.nih.sexpr",
     "test": "jest",
     "build:start": "npm run build && npm run start",
     "build:test:start": "npm run build && npm run test && npm run start"
