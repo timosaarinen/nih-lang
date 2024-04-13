@@ -1,0 +1,41 @@
+{
+  "name": "nih-language-support",
+  "displayName": "NIH Language Support",
+  "description": "Syntax highlighting for NIH language",
+  "version": "0.0.1",
+  "publisher": "timosaarinen",
+  "icon": "asset/nih-lang-logo-128.png",
+  "readme": "README.md",
+  "author": {
+    "name": "Timo Saarinen",
+    "email": "tsaari42@gmail.com"
+  },
+	"repository": {
+		"type": "git",
+		"url": "git+ssh://git@github.com/timosaarinen/nih-lang.git"
+	},
+	"homepage": "https://github.com/timosaarinen/nih-lang",
+  "qna": "https://github.com/timosaarinen/nih-lang/issues",
+	"keywords": [
+    "NIH",
+		"Ni!",
+    "Ni"
+  ],
+  "engines": {
+    "vscode": "^1.88.0"
+  },
+  "categories": ["Programming Languages"],
+  "contributes": {
+    "languages": [{
+      "id": "nih",
+      "aliases": ["NIH", "nih"],
+      "extensions": [".nih"],
+      "configuration": "./language-configuration/language-configuration.json"
+    }],
+    "grammars": [{
+      "language": "nih",
+      "scopeName": "source.nih",
+      "path": "./syntaxes/nih.tmLanguage.json"
+    }]
+  }
+}

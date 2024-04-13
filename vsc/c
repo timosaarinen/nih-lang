@@ -1,0 +1,2 @@
+vsce package
+code --install-extension nih-language-support-0.0.1.vsix

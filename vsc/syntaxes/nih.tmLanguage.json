@@ -1,0 +1,24 @@
+{
+  "scopeName": "source.nih",
+  "patterns": [
+    {
+      "name": "string.quoted.double.nih",
+      "begin": "\"",
+      "end": "\"",
+      "patterns": [
+        {
+          "name": "constant.character.escape.nih",
+          "match": "\\\\."
+        }
+      ]
+    },
+    {
+      "name": "comment.line.nih",
+      "begin": "//",
+      "end": "$"
+    }
+  ],
+  "fileTypes": [
+    "nih"
+  ]
+}
