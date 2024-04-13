@@ -67,7 +67,7 @@
         "patterns": [
             {
                 "name": "keyword.control.nih",
-                "match": "\\b(if|else|do|while|for|break|continue|return|switch|case|default|struct|enum|type|alias|const|pure|fun|uniform)\\b"
+                "match": "\\b(if|else|do|while|for|break|continue|return|switch|case|default|struct|enum|type|alias|const|pure|fun|uniform|let|get|set|inc|dec|call|doc)\\b"
             }
         ]
     },
@@ -83,7 +83,7 @@
       "patterns": [
           {
               "name": "variable.other.nih",
-              "match": "\\b(print|printchar|println|log)\\b"
+              "match": "\\b(print|printchars|printlf|log)\\b"
           },
           {
               "name": "variable.parameter.nih",

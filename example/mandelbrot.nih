@@ -27,8 +27,8 @@ e = 1.0
 
 for i = 0..<WIDTH:
   for j = 0..<HEIGHT:
-    cx = rs + i/WIDTH * (re - rs)
-    cy = is + j/HEIGHT * (ie - is)
+    cx = rs + float(i)/WIDTH * (re - rs)
+    cy = is + float(j)/HEIGHT * (ie - is)
     m = mandelbrot(cx, cy)
-    printchar(m > 0.0 ? '*' : ' ')
-  println()
+    printchars(m > 0.0 ? '*' : ' ')
+  printlf()

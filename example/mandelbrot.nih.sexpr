@@ -1,0 +1,32 @@
+(let WIDTH 16)
+(let HEIGHT 16)
+
+(let mandelbrot (fun (cx :float cy :float) :int (
+  (doc "@returns # of iterations (0 if not in Mandelbrot set)")
+  (let maxiters 80)
+  (set! zx 0)
+  (set! zy 0)
+  (set! n 0)
+  (do-while (
+    (let px (- (^ zx 2) (^ zy 2)))
+    (let py (- (* 2 zx zy)))
+    (set! zx (+ px cx))
+    (set! zy (+ py cy))
+    (let d (sqrt (+ (^ zx 2) (^ zy 2))))
+    (inc! n)
+    (if (> d 2) (return 0.0))
+  ) (< n maxiters))
+  (return n))
+
+(let rs -2.0)
+(let re 1.0)
+(let is -1.0)
+(let ie 1.0)
+
+(for-lt i 0 WIDTH
+  (for-lt j 0 HEIGHT
+    (let cx (+ rs (* (/ i :float WIDTH) (- re rs))))
+    (let cy (+ is (* (/ j :float HEIGHT) (- ie is))))
+    (let m (call mandelbrot cx cy))
+    (call printchars (? (> m 0.0) '*' ' '))
+    (call printlf)))

@@ -29,7 +29,7 @@
     "languages": [{
       "id": "nih",
       "aliases": ["NIH", "nih"],
-      "extensions": [".nih"],
+      "extensions": [".nih", ".nih.sexpr"],
       "configuration": "./language-configuration/language-configuration.json"
     }],
     "grammars": [{
