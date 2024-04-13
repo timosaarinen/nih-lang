@@ -1,33 +1,34 @@
-// Mandelbrot Set (console output)
+// Mandelbrot set with simple console output ('*' or space)
 WIDTH = 16
 HEIGHT = 16
 
-rs = -2
-re = 1
-is = -1
-e = 1
+fun mandelbrot(cx float, cy float) int:
+  // @returns # of iterations (0 if not in Mandelbrot set)
+  maxiters = 80
+  zx := 0
+  zy := 0
+  n := 0
+  do:
+    px = zx^2 - zy^2
+    py = 2 * zx * zy
+    zx := px + cx
+    zy := py + cy
+    d = sqrt(zx^2 + zy^2)
+    n++
+    if d > 2 return 0.0 // not in Mandelbrot set?
+  while n < maxiters
+  return n
 
-for i = 0..<
+//------------------------------------------------------------------------
+rs = -2.0
+re = 1.0
+is = -1.0
+e = 1.0
 
- 
-/*
-const REAL_SET = { start: -2, end: 1 }
-const IMAGINARY_SET = { start: -1, end: 1 }
-
-const colors = new Array(16).fill(0).map((_, i) => i === 0 ? '#000' : `#${((1 << 24) * Math.random() | 0).toString(16)}`)
-
-function draw() {
-    for (let i = 0; i < WIDTH; i++) {
-        for (let j = 0; j < HEIGHT; j++) {
-            complex = {
-                x: REAL_SET.start + (i / WIDTH) * (REAL_SET.end - REAL_SET.start),
-                y: IMAGINARY_SET.start + (j / HEIGHT) * (IMAGINARY_SET.end - IMAGINARY_SET.start)
-            }
-
-            const [m, isMandelbrotSet] = mandelbrot(complex)
-            ctx.fillStyle = colors[isMandelbrotSet ? 0 : (m % colors.length - 1) + 1]
-            ctx.fillRect(i, j, 1, 1)
-        }
-    }
-}
-*/
+for i = 0..<WIDTH:
+  for j = 0..<HEIGHT:
+    cx = rs + i/WIDTH * (re - rs)
+    cy = is + j/HEIGHT * (ie - is)
+    m = mandelbrot(cx, cy)
+    printchar(m > 0.0 ? '*' : ' ')
+  println()

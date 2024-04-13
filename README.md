@@ -1,4 +1,4 @@
-# NIH, a programming language
+# NIH - a KISS programming language
 
 - A next-generation programming language inspired by the subjective best of all the programming languages since Plankalkül.
 - Persistence with structured S-expression code - tabs and spaces are not stored unless quoted - "Ends the Tabs vs Spaces religious war once and for all".
@@ -40,7 +40,7 @@
 
 # Syntax Examples
 
-While NIH is stored in a S-expression format, it is intended to be viewed and edited mainly in non-Lispy syntax. You can edit the S-expressions directly, if you want, though!
+While NIH is meant to be stored in a S-expression format, it is intended to be viewed and edited mainly in non-Lispy syntax. You can edit the S-expressions directly if you so desire - and as option, compiling traditionally from a text file will be supported to keep the options open (and as the language evolves, will even be the first option).
 
 ### Print/logging (configurable, from System.print automatically, no need for imports)
 
@@ -74,25 +74,31 @@ Note that inside quotes, nothing is different, always UTF-8.
 ~~~
 ### Variables
 
-No const needed, always go for pure functions and immutability first. Type inference.
+As a design goal, prefer pure functions and immutable values first and require more syntax for mutability. No need for 'const' keyword below, as both 'foo' and 'bar' are immutable values by default. NIH also uses type inference - which makes code shorter and more readable in trivial unambiguous cases (still a good idea to specify types in an API for clarity, for example, even if not strictly required).
 ~~~
-bar = 100
+foo = 100    // type inferred -> integer
+bar = 123.0  // type inferred -> float (32-bit floating point 'f32' by default)
 ~~~
 
-### Mutability
-
-Long keyword for mutability... Types as in Go.
+Mutable variables with :=
 ~~~
-mutable numclicks u64 = 0
+counter := 0
+~~~
+
+Explicit type syntax as in Go, no ':' required. Note that 'f16' below is a 16-bit floating point type as used in GPU shaders - usually called 'half'. On that note, one the main goals of NIH is to support sharing library code between CPU and GPU code (shaders/compute).
+~~~
+mypi = f16(3.141592)  // 'constructor' syntax
+mypi = 3.141592 f16   // typed literal value
+mypi f16 = 3.141592   // 
 ~~~
 ### One-liner function declarations
 ~~~
-foo() = bar
+fun foo() = bar
 ~~~
 
 Math-style factors/multipliers without *.
 ~~~
-double(x) = 2x
+fun double(x) = 2x
 ~~~
 
 Dashes in identifiers. To make parsing work, only unary minus is allowed without whitespace around, otherwise 42 - 0 style.
@@ -102,16 +108,16 @@ the-answer = 42
 
 Optional return. By default, returns the value of the last expression in a function. Return is useful for early exit.
 ~~~
-the-answer-as-func() = return 42
+fun the-answer-as-func() = return 42
 ~~~
 ### Functions
 ~~~
-foo():
+fun foo():
   bar
 ~~~
 
 ~~~
-double(x) u64:
+fun double(x) u64:
   return 2 * x
 ~~~
 ### Multi-line strings (automatically from the block, leading/trailing spaces not stored, \n are)
@@ -132,15 +138,13 @@ TODO
 - node/tsc/esnext/esm/eslint/jest/prettier
 - install ESLint and Prettier extensions for Visual Studio Code
 
-# TODO
+# Roadmap
 
-- lex, parse, emitjs, evaljs passes
-- webassembly emit later
-- no AST eval needed, skip it, eval JS
-- OT: for Naama, live coding interface, compile to JS on every char change, eval JS, output as overlay to text input area so works on portrait phones too
-- KISS lexical analyzer and AST gen parser.. lexinit,getnexttoken n,allow to add code for repl - keep the line start pos, 
-- emit JS, add prefix lib/boot code, emit AST to JS
-
+-> GLSL backend (one the goals of NIH is to share library code between CPU and GPU code)
+-> Web live coding editor
+-> Integrated linter
+-> Integrated code formatter (if required for 'textual NIH' source code? For S-expressions no need)
+-> WebAssembly backend
 
 ## Just do it
 
