@@ -1,24 +1,90 @@
 {
   "scopeName": "source.nih",
+  "fileTypes": [ 
+    "nih" 
+  ],
   "patterns": [
-    {
-      "name": "string.quoted.double.nih",
-      "begin": "\"",
-      "end": "\"",
+    { "include": "#comments" },
+    { "include": "#strings" },
+    { "include": "#keywords" },
+    { "include": "#types" },
+    { "include": "#natives" }
+  ],
+  "repository": {
+    "comments": {
+        "patterns": [
+            {
+                "name": "comment.line.double-slash.nih",
+                "match": "//.*"
+            },
+            {
+                "name": "comment.line.hash.nih",
+                "match": "#.*"
+            },
+            {
+                "name": "comment.block.nih",
+                "begin": "/\\*",
+                "end": "\\*/"
+            }
+        ]
+    },
+    "strings": {
+        "patterns": [
+            {
+                "name": "string.quoted.double.nih",
+                "begin": "\"",
+                "end": "\"",
+                "patterns": [
+                    {
+                        "name": "constant.character.escape.nih",
+                        "match": "\\\\(.)"
+                    }
+                ]
+            },
+            {
+              "name": "string.quoted.single.nih",
+              "begin": "'",
+              "end": "'",
+              "patterns": [
+                  {
+                      "name": "constant.character.escape.nih",
+                      "match": "\\\\(.)"
+                  }
+              ]
+            }
+        ]
+    },
+    "keywords": {
+        "patterns": [
+            {
+                "name": "keyword.control.nih",
+                "match": "\\b(if|else|while|for|break|continue|return|switch|case|default|struct|enum|type|alias|const|pure|fun|uniform)\\b"
+            }
+        ]
+    },
+    "types": {
       "patterns": [
-        {
-          "name": "constant.character.escape.nih",
-          "match": "\\\\."
-        }
+          {
+              "name": "storage.type.nih",
+              "match": "\\b(int|uint|float|char|string|bool|void|u8|u16|u32|u64|u128|s8|s16|s32|s64|s128|f16|f32|f64|vec2|vec3|vec4|bvec2|bvec3|bvec4|ivec2|ivec3|ivec4|uvec2|uvec3|uvec4|mat3|mat4x3|mat4|sampler2D|sampler3D|samplerCube|texture)\\b"
+          }
       ]
     },
-    {
-      "name": "comment.line.nih",
-      "begin": "//",
-      "end": "$"
+    "natives": {
+      "patterns": [
+          {
+              "name": "variable.other.nih",
+              "match": "\\b(print|log)\\b"
+          },
+          {
+              "name": "variable.parameter.nih",
+              "match": "\\b(RESOLUTION|TIME|TIMEDELTA|FRAME|FRAMERATE|SAMPLERATE|CURSOR)\\b"
+          },
+          {
+              "name": "variable.language.nih",
+              "match": "\\b(sin|cos|tan|asin|acos|atan|exp|exp2|log|log2|pow|sqrt|invsqrt|abs|sign|floor|ceil|trunc|fract|mod|min|max|clamp|saturate|mix|lerp|smoothstep|step|length|distance|dot|cross|normalize|reflect|refract|inverse|transpose|texture|texturesize|ddx|ddy|rand|degrees|radians|time|resolution)\\b"
+          }
+      ]
     }
-  ],
-  "fileTypes": [
-    "nih"
-  ]
+  }
 }
