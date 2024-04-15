@@ -23,11 +23,11 @@ console.log("------------------------")
 console.log(sourcecode)
 console.log("------------------------")
 
-let lexer = new Lexer(sourcecode)
+let lexer = new Lexer(sourcecode, filename)
 lexer.debugDump()
 console.log("------------------------")
 
-let ast = parseSexpr(lexer)
+let ast = parse(lexer)
 AST.debugDump(ast)
 console.log("------------------------")
 

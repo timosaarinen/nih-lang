@@ -1,16 +1,46 @@
 export namespace AST {
+  type NodeT =
+    'list' | 
+    'ident' | 
+    'strlit' | 
+    'numlit' | 
+    'call' | 
+    'func' | 
+    'op' | 
+    'ctrl' | 
+    'def' | 
+    'return' | 
+    'typeann';
   export interface Node {
-    type: 'list' | 'ident' | 'strlit' | 'numlit' | 'call';
-    str?: string; // name, value (if has a string representation)
-    num?: number;
+    type: NodeT;
+    str?: string; // name, value, op (if has a string representation)
+    num?: number; // number value
     children?: Node[];
+    rtype?: string; // node optional type, e.g. function return type or expression tree resulting type
   }
-
-  export function list()              : Node { return { type: 'list', children: new Array<Node> } }
-  export function ident(name: string) : Node { return { type: 'ident', str: name } }
-  export function strlit(str: string) : Node { return { type: 'strlit', str: str } }
-  export function numlit(num: number) : Node { return { type: 'numlit', num: num } }
-  export function call(name: string)  : Node { return { type: 'call', str: name } }
+  export function list()                            : Node { return { type: 'list', children: [] } }
+  export function ident(name: string)               : Node { return { type: 'ident', str: name } }
+  export function strlit(str: string)               : Node { return { type: 'strlit', str: str } }
+  export function numlit(num: number)               : Node { return { type: 'numlit', num: num } }
+  export function call(name: string)                : Node { return { type: 'call', str: name } }
+  export function op(o: string, s: Node[])          : Node { return { type: 'op', str: o, children: s }; }
+  export function ctrl(t: string, c: Node, b: Node) : Node { return { type: 'ctrl', str: t, children: [c, b] }; }
+  export function returnstmt(expr: Node)            : Node { return { type: 'return', children: [expr] }
+  // export function typeann(name: string, t: string)  : Node { return { type: 'typeann', str: name, rtype: t } }
+  export function func(params: Node[], body: Node, rtype: string | null) : Node {
+    if (rtype) {
+      return { type: 'func', children: [...params, body], rtype: rtype };
+    } else {
+      return { type: 'func', children: [...params, body] };
+    }
+  }
+  export function def(name: string, value: Node, type: string | null = null): Node {
+    if (type) {
+      return { type: 'def', str: name, children: [value], rtype: type };
+    } else {
+      return { type: 'def', str: name, children: [value] };
+    }
+  }
 
   export function id(n: Node): string { return n.str ? n.str : "<unknown identifier>"; }
   export function isid(n: Node, id: string): boolean { if(!n.str) return false; else return n.str == id; }

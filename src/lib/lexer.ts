@@ -1,24 +1,32 @@
 import { stripNewlines } from "./util.js";
 
-type TokenClass = 'ident' | 'string' | 'number' | '+' | '-' | '*' | '/' | '(' | ')';
+type TokenType = 
+  'ident' |   // identifier, name in value e.g. "foobar"
+  'string' |  // literal string, content in value e.g. "Hello, World!"
+  'number' |  // number literal, string representation in value e.g. "42" or "3.141592"
+  'op';       // all one or two character operators - in value e.g. '+', '-', '?', '(', '&&'
 
 type Token = {
-  type: TokenClass;
-  value: string | null;
+  type: TokenType;
+  value: string;
   posStartEnd: [number, number];
-} | null;
+};
 
 export class Lexer {
-  private filename: string = "sexpr.nih"; // TODO
   private current: number = 0;
   private tokens: Token[] = [];
   private source: string = "";
   private lineStart: number[] = [];
+  private filename: string;
+  private sexpr: boolean;
 
-  constructor(source: string = "") {
+  constructor(source: string = "", filename: string) {
+    this.sexpr = filename.endsWith('.nih.sexpr');
     this.source = source;
+    this.filename = filename;
     this.tokenize();
   }
+  public nih() : boolean { return !this.sexpr; }
 
   private tokenize() {
     const src = this.source;
@@ -27,9 +35,9 @@ export class Lexer {
     this.lineStart = [0];
     this.current = 0;
 
-    const pushTokenChar = (type: TokenClass, pos: number) => 
-      this.tokens.push({type: type, value: null, posStartEnd: [pos, pos]});
-    const pushTokenRange = (type: TokenClass, value: string, start: number, end: number) => 
+    const pushTokenOp = (op: string, pos: number) => 
+      this.tokens.push({type: 'op', value: op, posStartEnd: [pos, pos]});
+    const pushTokenRange = (type: TokenType, value: string, start: number, end: number) => 
       this.tokens.push({type: type, value, posStartEnd: [start, end]});
   
     const isLetter = (char: string) => /[a-zA-Z_]/.test(char);
@@ -42,12 +50,12 @@ export class Lexer {
       if (char === '\n') { index++; this.lineStart.push(index); continue; }
       if (/\s/.test(char)) { index++; continue; } // whitespace
 
-      if (char === '(') { pushTokenChar('(', index++); continue; }
-      if (char === ')') { pushTokenChar(')', index++); continue; }
-      if (char === '+') { pushTokenChar('+', index++); continue; }
-      if (char === '-') { pushTokenChar('-', index++); continue; }
-      if (char === '*') { pushTokenChar('*', index++); continue; }
-      if (char === '/') { pushTokenChar('/', index++); continue; }
+      if (char === '(') { pushTokenOp('(', index++); continue; }
+      if (char === ')') { pushTokenOp(')', index++); continue; }
+      if (char === '+') { pushTokenOp('+', index++); continue; }
+      if (char === '-') { pushTokenOp('-', index++); continue; }
+      if (char === '*') { pushTokenOp('*', index++); continue; }
+      if (char === '/') { pushTokenOp('/', index++); continue; }
 
       if (isLetter(char)) {
         let start = index;
@@ -87,16 +95,37 @@ export class Lexer {
     }
   }
 
-  public peekToken(lookahead: number = 0): Token {
+  public peekTokenCanBeEofNull(lookahead: number = 0): Token | null {
     const position = this.current + lookahead;
     return position < this.tokens.length ? this.tokens[position] : null;
   }
+  public peekToken(lookahead: number = 0): Token {
+    const position = this.current + lookahead;
+    if (position >= this.tokens.length) {
+      this.error("Unexpected end-of-file after", this.tokens[this.current + lookahead - 1]);
+    }
+    return this.tokens[position];
+  }
 
-  public eatToken(): Token {
+  public eatToken(expectedType?: TokenType, expectedValue? : string): Token {
     if (this.current < this.tokens.length) {
-      return this.tokens[this.current++];
+      let t = this.tokens[this.current++];
+      if (expectedValue && t.value !== expectedValue) this.error(`Expected ${expectedValue}, got ${t.value}`, t);
+      if (expectedType && t.type != expectedType) this.error(`Expected token of type ${expectedType}, got ${t}`, t);
+      return t;
     } else {
-      return null;
+      this.error("Unexpected end-of-file after", this.tokens[this.current - 1]);
+    }
+  }
+  public eatTokenIfType(expectedType: TokenType, expectedValue? : string): Token | null {
+    if (this.current < this.tokens.length) {
+      let t = this.tokens[this.current];
+      if (t.type !== expectedType) return null;
+      if (expectedValue && t.value !== expectedValue) return null;
+      this.current++;
+      return t;
+    } else {
+      this.error("Unexpected end-of-file after", this.tokens[this.current - 1]);
     }
   }
 
@@ -175,5 +204,4 @@ export class Lexer {
       this.errorLine(err, this.current, this.current);
     }
   }
-
 }
