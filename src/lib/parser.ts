@@ -145,10 +145,9 @@ export function parseNihStmt(lexer: Lexer): AST.Node {
 
 export function parseNih(lexer: Lexer): AST.Node {
   let list = AST.list();
-  while(lexer.peekTokenCanBeEofNull()) {
-    AST.addchild()
-    const t = lexer.peekToken(); // TODO: peek if nothing?
-    if (t.type == 'ident') {
+  let t;
+  while(t = lexer.peekTokenCanBeEofNull()) {
+    if (t.type == 'keyword') {
       // TODO: fun, set, call... except this ain't S-expr..
       //    foo = 42, bar(42), 
       switch(t.value) {

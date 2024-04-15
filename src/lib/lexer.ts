@@ -1,10 +1,15 @@
-import { stripNewlines } from "./util.js";
+import { parseName, skipToNextLine, stripNewlines } from "./util.js";
+import { isKeyword } from "./langdef.js"
 
 type TokenType = 
+  'keyword' | // NIH language keyword, e.g. 'fun', 'for'..
   'ident' |   // identifier, name in value e.g. "foobar"
   'string' |  // literal string, content in value e.g. "Hello, World!"
   'number' |  // number literal, string representation in value e.g. "42" or "3.141592"
   'op';       // all one or two character operators - in value e.g. '+', '-', '?', '(', '&&'
+
+type Lang = 
+  'nih' | 'nih-sexpr'
 
 type Token = {
   type: TokenType;
@@ -18,15 +23,13 @@ export class Lexer {
   private source: string = "";
   private lineStart: number[] = [];
   private filename: string;
-  private sexpr: boolean;
+  public lang: Lang = 'nih';
 
   constructor(source: string = "", filename: string) {
-    this.sexpr = filename.endsWith('.nih.sexpr');
     this.source = source;
     this.filename = filename;
     this.tokenize();
   }
-  public nih() : boolean { return !this.sexpr; }
 
   private tokenize() {
     const src = this.source;
@@ -35,20 +38,24 @@ export class Lexer {
     this.lineStart = [0];
     this.current = 0;
 
+    const startNewline = (index: number) => { this.lineStart.push(index); return index; }
     const pushTokenOp = (op: string, pos: number) => 
       this.tokens.push({type: 'op', value: op, posStartEnd: [pos, pos]});
     const pushTokenRange = (type: TokenType, value: string, start: number, end: number) => 
       this.tokens.push({type: type, value, posStartEnd: [start, end]});
   
-    const isLetter = (char: string) => /[a-zA-Z_]/.test(char);
-    const isDigit = (char: string) => /[0-9]/.test(char);
-
     let index = 0;
     while (index < src.length) {
-      let char = src[index];
+      const char = src[index];
+      const nextchar = (index + 1) < src.length ? src[index+1] : '';
 
-      if (char === '\n') { index++; this.lineStart.push(index); continue; }
+      if (char === '\n') { startNewline(index+1); continue; }
       if (/\s/.test(char)) { index++; continue; } // whitespace
+
+      if ((char === '/' && nextchar === '/') || (char === '#' && /\s/.test(nextchar))) {
+        index = startNewline(skipToNextLine(src, index));
+        continue;
+      }
 
       if (char === '(') { pushTokenOp('(', index++); continue; }
       if (char === ')') { pushTokenOp(')', index++); continue; }
@@ -57,14 +64,15 @@ export class Lexer {
       if (char === '*') { pushTokenOp('*', index++); continue; }
       if (char === '/') { pushTokenOp('/', index++); continue; }
 
+      if (char == '#') { // #pragma
+        {value, start, end} = parseName(src, index);
+        continue;
+      }
+
       if (isLetter(char)) {
-        let start = index;
-        index++;
-        while (isLetter(src[index]) || isDigit(src[index])) {
-          index++;
-        }
-        const value = src.slice(start, index);
-        pushTokenRange('ident', value, start, index);
+        [value, start, end] = parseIdent(src, index);
+        pushTokenRange(isKeyword(value) ? 'keyword' : 'ident', value, start, end);
+        index = end+1;
         continue;
       }
 
