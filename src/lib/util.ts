@@ -13,12 +13,12 @@ export function skipToNextLine(str: string, index: number): number {
   return index;
 }
 
-export function parseName(src: string, index: number) {
+export function parseName(src: string, index: number): [string, number, number] {
   let start = index;
   index++;
   while (isLetter(src[index]) || isDigit(src[index])) {
     index++;
   }
-  const value = src.slice(start, index);
+  const value: string = src.slice(start, index);
   return [value, start, index];
 }

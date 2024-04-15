@@ -30,7 +30,8 @@ function resolveExpressionStack(lexer: Lexer, stack: AST.Node[]): AST.Node {
 function parseExpression(lexer: Lexer): AST.Node {
   let stack = [];
   while (true) {
-    let token = lexer.peekTokenCanBeEofNull();
+    let token = lexer.peekTokenCanBeEof();
+    // TODO: use langdef.ts
     if (!token || ['+', '-', '*', '/', ')'].includes(token.type)) {
       break; // Stop at an operator or end of expression
     }
@@ -138,15 +139,14 @@ export function parseNihStmt(lexer: Lexer): AST.Node {
         parseFunctionDeclaration(lexer);
         break;
     case 'ident':
-      switch()
+      // TODO:
   }
-
 }
 
 export function parseNih(lexer: Lexer): AST.Node {
   let list = AST.list();
   let t;
-  while(t = lexer.peekTokenCanBeEofNull()) {
+  while(t = lexer.peekTokenCanBeEof()) {
     if (t.type == 'keyword') {
       // TODO: fun, set, call... except this ain't S-expr..
       //    foo = 42, bar(42), 
@@ -155,12 +155,11 @@ export function parseNih(lexer: Lexer): AST.Node {
           parseFunctionDeclaration(lexer);
           break;
       case 'ident':
-        switch()
+          // TODO:
     }
 
     // TODO: branch depending on first token, dat recursive descent!
-    switch()
-    if ()
+
 
     let sexpr = parse(lexer);
     list = AST.addchild(list, sexpr);

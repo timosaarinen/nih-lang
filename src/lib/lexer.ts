@@ -1,4 +1,4 @@
-import { parseName, skipToNextLine, stripNewlines } from "./util.js";
+import { isDigit, isLetter, parseName, skipToNextLine, stripNewlines } from "./util.js";
 import { isKeyword } from "./langdef.js"
 
 type TokenType = 
@@ -50,13 +50,23 @@ export class Lexer {
       const nextchar = (index + 1) < src.length ? src[index+1] : '';
 
       if (char === '\n') { startNewline(index+1); continue; }
-      if (/\s/.test(char)) { index++; continue; } // whitespace
 
+      //---- Whitespace --------------------------------------------------
+      // TODO: move operator checking before whitespace, as we have e.g. ' - '
+      if (/\s/.test(char)) { 
+        index++; 
+        continue; 
+      }
+
+      //---- Comments ----------------------------------------------------
       if ((char === '/' && nextchar === '/') || (char === '#' && /\s/.test(nextchar))) {
         index = startNewline(skipToNextLine(src, index));
         continue;
       }
+      // TODO: block comments /* */ - nestable!
 
+      //---- Operators ---------------------------------------------------
+      // TODO: use langdef.ts
       if (char === '(') { pushTokenOp('(', index++); continue; }
       if (char === ')') { pushTokenOp(')', index++); continue; }
       if (char === '+') { pushTokenOp('+', index++); continue; }
@@ -64,18 +74,28 @@ export class Lexer {
       if (char === '*') { pushTokenOp('*', index++); continue; }
       if (char === '/') { pushTokenOp('/', index++); continue; }
 
-      if (char == '#') { // #pragma
-        {value, start, end} = parseName(src, index);
+      //---- Keywords ----------------------------------------------------
+      // TODO: use langdef.ts
+
+      //---- #pragma -----------------------------------------------------
+      if (char == '#') { 
+        const [name, start, end] = parseName(src, index);
+        switch(name) {
+          case '#lang:nih-sexpr': this.lang = 'nih-sexpr'; break;
+          default:
+        }
         continue;
       }
 
+      //---- Identifiers -------------------------------------------------
       if (isLetter(char)) {
-        [value, start, end] = parseIdent(src, index);
-        pushTokenRange(isKeyword(value) ? 'keyword' : 'ident', value, start, end);
+        const [name, start, end] = parseName(src, index);
+        pushTokenRange(isKeyword(name) ? 'keyword' : 'ident', name, start, end);
         index = end+1;
         continue;
       }
 
+      //---- Number literals ---------------------------------------------
       if (isDigit(char)) {
         let start = index;
         index++;
@@ -87,6 +107,7 @@ export class Lexer {
         continue;
       }
 
+      //---- String literals ---------------------------------------------
       // NOTE: string interpolation is a native macro handled by parser
       if ("'\"`".includes(char)) {
         let start = ++index;
@@ -99,11 +120,12 @@ export class Lexer {
         continue;
       }
 
-      throw new Error(`${this.infoPrefix()} Unknown token: ${char}`);
+      // TODO:
+      this.error(`Syntax error! ..or TODO! Unparsed token, starting with: ${char}${nextchar}`);
     }
   }
 
-  public peekTokenCanBeEofNull(lookahead: number = 0): Token | null {
+  public peekTokenCanBeEof(lookahead: number = 0): Token | null {
     const position = this.current + lookahead;
     return position < this.tokens.length ? this.tokens[position] : null;
   }
