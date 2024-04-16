@@ -1,10 +1,5 @@
 // NOTE: the order matters! As parsing checks the more specialized cases first, for example ' + ' vs '+'
 
-// TODO: add types: "\\b(int|uint|float|char|string|bool|void|u8|u16|u32|u64|u128|s8|s16|s32|s64|s128|f16|f32|f64|vec2|vec3|vec4|bvec2|bvec3|bvec4|ivec2|ivec3|ivec4|uvec2|uvec3|uvec4|mat3|mat4x3|mat4|sampler2D|sampler3D|samplerCube|texture)\\b"
-// TODO: add macros: "\\b(print|printchars|printlf|log)\\b"
-// TODO: add native variables? "\\b(RESOLUTION|TIME|TIMEDELTA|FRAME|FRAMERATE|SAMPLERATE|CURSOR)\\b"
-// TODO: add native functions? "\\b(sin|cos|tan|asin|acos|atan|exp|exp2|log|log2|pow|sqrt|invsqrt|abs|sign|floor|ceil|trunc|fract|mod|min|max|clamp|saturate|mix|lerp|smoothstep|step|length|distance|dot|cross|normalize|reflect|refract|inverse|transpose|texture|texturesize|ddx|ddy|rand|degrees|radians|time|resolution)\\b"
-
 //------------------------------------------------------------------------
 //  Operators
 //------------------------------------------------------------------------
@@ -48,22 +43,58 @@ const keywords = [
 ];
 const keywordSet = new Set(keywords);
 //------------------------------------------------------------------------
-//  Keywords
+//  Native types
 //------------------------------------------------------------------------
-"match": "\\b(int|uint|float|char|string|bool|void|u8|u16|u32|u64|u128|s8|s16|s32|s64|s128|f16|f32|f64|vec2|vec3|vec4|bvec2|bvec3|bvec4|ivec2|ivec3|ivec4|uvec2|uvec3|uvec4|mat3|mat4x3|mat4|sampler2D|sampler3D|samplerCube|texture)\\b"
+const ntypes = [
+  'bool', 'bvec2', 'bvec3', 'bvec4',
+  'char',
+  'float', 'f16', 'f32', 'f64',
+  'int', 'ivec2', 'ivec3', 'ivec4',
+  'mat4x3', 'mat3', 'mat4',
+  's8', 's16', 's32', 's64', 's128', 'sampler2D', 'sampler3D', 'samplerCube', 'string',
+  'texture',
+  'uint', 'u8', 'u16', 'u32', 'u64', 'u128', 'uvec2', 'uvec3', 'uvec4',
+  'vec2', 'vec3', 'vec4', 'void',
+];
+const ntypeSet = new Set(ntypes);
+//------------------------------------------------------------------------
+//  Native functions/macros
+//------------------------------------------------------------------------
+// TODO: add more native functions: "\\b(sin|cos|tan|asin|acos|atan|exp|exp2|log|log2|pow|sqrt|invsqrt|abs|sign|floor|ceil|trunc|fract|mod|min|max|clamp|saturate|mix|lerp|smoothstep|step|length|distance|dot|cross|normalize|reflect|refract|inverse|transpose|texture|texturesize|ddx|ddy|rand|degrees|radians|time|resolution)\\b"
+const nfuncs = [
+  'log',
+  'printchars', 'printlf', 'print', 
+];
+const nfuncSet = new Set(nfuncs);
+//------------------------------------------------------------------------
+//  Native variables - TODO: keep as "functions"?
+//------------------------------------------------------------------------
+// TODO: add native variables? "\\b(RESOLUTION|TIME|TIMEDELTA|FRAME|FRAMERATE|SAMPLERATE|CURSOR)\\b"
 
 //------------------------------------------------------------------------
-export function isOperator(name: string): boolean { return operatorSet.has(name); }
-export function isKeyword (name: string): boolean { return keywordSet.has(name); }
+//  Langdef API
 //------------------------------------------------------------------------
-export function parseOperator(src: string, index: number): [string, number, number] | null {
-  // TODO: make more performant than brute-force looping
-  for (let i = 0; i < operators.length; ++i) {
-    const op = operators[i];
+export function isOperator   (name: string): boolean { return operatorSet.has(name); }
+export function isKeyword    (name: string): boolean { return keywordSet.has(name); }
+export function isNativeType (name: string): boolean { return ntypeSet.has(name); }
+export function isNativeFunc (name: string): boolean { return nfuncSet.has(name); }
+//------------------------------------------------------------------------
+interface ParseR {
+  str: string,
+  start: number,
+  end: number
+}
+const matchOrderedWordsBruteForce = (words: string[], src: string, index: number): ParseR | null => {
+  for (let i = 0; i < words.length; ++i) {
+    const op = words[i];
     const s = src.substring(index, index + op.length);
     if (s === op) {
-      return [s, index, index + s.length];
+      return {str: s, start: index, end: index + s.length};
     }
   }
   return null;
 }
+export function matchOperator(src: string, index: number): ParseR | null   { return matchOrderedWordsBruteForce(operators, src, index); }
+export function matchKeyword(src: string, index: number): ParseR | null    { return matchOrderedWordsBruteForce(keywords, src, index); }
+export function matchNativeType(src: string, index: number): ParseR | null { return matchOrderedWordsBruteForce(ntypes, src, index); }
+export function matchNativeFunc(src: string, index: number): ParseR | null { return matchOrderedWordsBruteForce(nfuncs, src, index); }
