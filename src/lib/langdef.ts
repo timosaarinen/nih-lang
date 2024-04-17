@@ -10,14 +10,13 @@
 const operators = [                                                        // Operator:
   '<', '<=', '>', '>=', '==', '!=',                                        //  relational
   '+=', '-=', '*=', '/=', '%=', '**=', '|>=', '=',                         //  assignment
-  '**',                                                                    //  exponentation
+  '^',                                                                     //  exponentation (NOTE: bitwise xor is '^^')
   ' + ', ' - ', ' * ', ' / ', ' % ',                                       //  arithmetic
   '+', '-',                                                                //  unary
   '|>',                                                                    //  piping/chaining
-  'USHL', '<<<', 'USHR', '>>>',                                            //  unsigned bitwise shift left/right
-  'ROTL', '<<@', 'ROTR', '>>@',                                            //  bitwise rotate left/right
-  'and', '&&', 'or', '||', 'not', '!',                                     //  logical
-  'AND', '&', 'OR', '|', 'SHL', '<<', 'SHR', '<<', 'NOT', '~', 'XOR', '^', //  bitwise
+  '!', '&&', '||',                                                         //  logical
+  '&', '|',                                                                //  logical/bitwise
+  '<<<', '>>>', '<<@', '>>@', '<<', '>>', '~', '^^',                       //  bitwise
   '.',                                                                     //  dot
   '?',                                                                     //  ternary
 ];
@@ -72,7 +71,7 @@ const nfuncs = [
   'min', 'mix', 'mod',
   'normalize',
   'log2', 'log',
-  'radians', 'rand',
+  'radians', 'rand', 'rcl', 'rcr', 'rol', 'ror',
   'pow', 'printchars', 'printlf', 'print', 
   'saturate', 'sign', 'sin', 'smoothstep', 'step', 'sqrt',
   'tan', 'texturesize', 'transpose', 'trunc', 
