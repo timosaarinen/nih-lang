@@ -1,5 +1,6 @@
-// NOTE: the order matters! As parsing checks the more specialized cases first, for example ' + ' vs '+'
-
+// NOTE: 
+//   The order matters!
+//   - Parsing checks the more specialized cases first, for example ' + ' vs '+'
 //------------------------------------------------------------------------
 //  Operators
 //------------------------------------------------------------------------
@@ -78,10 +79,16 @@ const nfuncs = [
 ];
 const nfuncSet = new Set(nfuncs);
 //------------------------------------------------------------------------
-//  Native variables - TODO: keep as "functions"?
+//  Native variables
 //------------------------------------------------------------------------
-// TODO: add native variables? "\\b(RESOLUTION|TIME|TIMEDELTA|FRAME|FRAMERATE|SAMPLERATE|CURSOR)\\b"
-
+const nvars = [
+  'CURSOR',
+  'FRAMERATE', 'FRAME',
+  'RESOLUTION',
+  'TIMEDELTA', 'TIME',
+  'SAMPLERATE',
+];
+const nvarSet = new Set(nvars);
 //------------------------------------------------------------------------
 //  Langdef API
 //------------------------------------------------------------------------
@@ -89,6 +96,7 @@ export function isOperator   (name: string): boolean { return operatorSet.has(na
 export function isKeyword    (name: string): boolean { return keywordSet.has(name); }
 export function isNativeType (name: string): boolean { return ntypeSet.has(name); }
 export function isNativeFunc (name: string): boolean { return nfuncSet.has(name); }
+export function isNativeVar  (name: string): boolean { return nvarSet.has(name); }
 //------------------------------------------------------------------------
 interface ParseR {
   str: string,
@@ -97,10 +105,10 @@ interface ParseR {
 }
 const matchOrderedWordsBruteForce = (words: string[], src: string, index: number): ParseR | null => {
   for (let i = 0; i < words.length; ++i) {
-    const op = words[i];
-    const s = src.substring(index, index + op.length);
-    if (s === op) {
-      return {str: s, start: index, end: index + s.length};
+    const word = words[i];
+    const s = src.substring(index, index + word.length);
+    if (s === word) {
+      return {str: s, start: index, end: index + word.length};
     }
   }
   return null;
@@ -109,3 +117,4 @@ export function matchOperator(src: string, index: number): ParseR | null   { ret
 export function matchKeyword(src: string, index: number): ParseR | null    { return matchOrderedWordsBruteForce(keywords, src, index); }
 export function matchNativeType(src: string, index: number): ParseR | null { return matchOrderedWordsBruteForce(ntypes, src, index); }
 export function matchNativeFunc(src: string, index: number): ParseR | null { return matchOrderedWordsBruteForce(nfuncs, src, index); }
+export function matchNativeVar(src: string, index: number): ParseR | null  { return matchOrderedWordsBruteForce(nvars, src, index); }
