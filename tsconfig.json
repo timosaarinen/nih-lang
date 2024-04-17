@@ -19,8 +19,8 @@
     /* Linting */
     "alwaysStrict": true,
     "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
+    "noUnusedLocals": false, // TODO: run strict-lint to catch unused locals/params
+    "noUnusedParameters": false,
     "noFallthroughCasesInSwitch": true,
     "forceConsistentCasingInFileNames": true
   },

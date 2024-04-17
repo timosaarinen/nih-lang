@@ -1,7 +1,7 @@
-import { AST } from './lib/ast.js';
+import { debugDump } from './lib/ast.js';
 import { emitJs } from './lib/emitjs.js';
 import { Lexer } from './lib/lexer.js';
-import { parseSexpr } from './lib/parser.js';
+import { parseModule } from './lib/parser.js';
 import { readFileSync } from 'fs';
 
 //------------------------------------------------------------------------
@@ -27,8 +27,8 @@ let lexer = new Lexer(sourcecode, filename)
 lexer.debugDump()
 console.log("------------------------")
 
-let ast = parse(lexer)
-AST.debugDump(ast)
+let ast = parseModule(lexer)
+debugDump(ast)
 console.log("------------------------")
 
 let jscode = emitJs(ast)

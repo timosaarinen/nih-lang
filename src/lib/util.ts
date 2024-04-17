@@ -1,6 +1,19 @@
 export const isLetter = (char: string) => /[a-zA-Z_]/.test(char);
 export const isDigit = (char: string) => /[0-9]/.test(char);
 
+export function error(msg: string): any {
+  throw new Error(msg);
+  return null;
+}
+
+export function assert(shouldbetrue: boolean, msg?: string): any {
+  if (!shouldbetrue) {
+    msg = 'Assertion failed: ' + (msg ?? '');
+    throw new Error(msg);
+  }
+  return null;
+}
+
 export function stripNewlines(str: string): string {
   return str.replace(/\r?\n|\r/g, "");
 }

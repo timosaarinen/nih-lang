@@ -1,4 +1,5 @@
-import { AST } from "./ast.js";
+import { Node, foreach, foreachStartAt, id, isId, number } from "./ast.js";
+import { error } from "./util.js";
 
 const prefixJs = `
 //<<<library code>>>
@@ -6,28 +7,36 @@ function printStr(s) { console.log(s); }
 //<<<user code>>>
 `;
 
-function emit(n: AST.Node): string {
+function emit(n: Node): string {
   switch (n.type) {
     case 'list': {
       // TODO: Use (call <ident> (...)) for all function calls. Also set/get.
       // TODO: print as native string interpolation macro
       if(n.children) {
-        if(n.children[0].type == 'ident' && AST.isid(n.children[0], 'print')) {
-          return `printStr( ${AST.foreachAfterFirst(n, emit).join(', ')} )`;
+        if(n.children[0].type == 'ident' && isId(n.children[0], 'print')) {
+          return `printStr( ${foreachStartAt(n, 1, emit).join(', ')} )`;
         } else {
-          return AST.foreach(n, emit).join('\n');
+          return foreach(n, emit).join('\n');
         }
       }
-      throw new Error(`List is not a list: ${n.type}`);
+      error(`List is not a list: ${n.type}`);
+      break;
     }
-    case 'call':    return `${AST.id(n)}(${AST.foreachAfterFirst(n, emit).join(', ')})`;
-    case 'strlit':  return JSON.stringify(n.str);
-    case 'numlit':  return AST.number(n).toString();
-    case 'ident':   return AST.id(n);
-    default:        throw new Error(`Unhandled node type: ${n.type}`);
+    case 'call':
+      return `${id(n)}(${foreachStartAt(n, 1, emit).join(', ')})`;
+    case 'strlit':
+      return JSON.stringify(n.str);
+    case 'numlit':
+      return number(n).toString();
+    case 'ident':
+      return id(n);
+    default:
+      error(`Unhandled node type: ${n.type}`);
   }
+  error('Nothing to emit!');
+  return '';
 }
 
-export function emitJs(list: AST.Node): string {
+export function emitJs(list: Node): string {
   return prefixJs + emit(list);
 }

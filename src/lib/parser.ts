@@ -1,33 +1,33 @@
 import { Lexer } from "./lexer.js"; // TODO: fix for requiring '.js'
-import { AST } from "./ast.js";
+import { Node, addChild, def, func, ident, list, numlit, op, strlit, ctrl } from './ast.js'
 
-function parseAtom(lexer: Lexer): AST.Node {
+function parseAtom(lexer: Lexer): Node {
   const t = lexer.eatToken();
   switch (t.type) {
     case 'number':
-      return AST.numlit(parseFloat(t.value));
+      return numlit(parseFloat(t.value));
     case 'string':
-      return AST.strlit(t.value);
+      return strlit(t.value);
     case 'ident':
-      return AST.ident(t.value);
+      return ident(t.value);
     default:
       lexer.error(`Unexpected token: ${t.type}`, t);
   }
 }
 
-function resolveExpressionStack(lexer: Lexer, stack: AST.Node[]): AST.Node {
+function resolveExpressionStack(lexer: Lexer, stack: Node[]): Node {
   // TODO: precedence and associativity rules - for KISS, left-associative binary operations for now
   let result = stack[0];
   for (let i = 1; i < stack.length; i += 2) {
     let operator = stack[i].str;
     if (typeof operator !== 'string') lexer.error("Invalid operator");
     let rightOperand = stack[i + 1];
-    result = AST.op(operator, [result, rightOperand]);
+    result = op(operator, [result, rightOperand]);
   }
   return result;
 }
 
-function parseExpression(lexer: Lexer): AST.Node {
+function parseExpression(lexer: Lexer): Node {
   let stack = [];
   while (true) {
     let token = lexer.peekTokenCanBeEof();
@@ -39,7 +39,7 @@ function parseExpression(lexer: Lexer): AST.Node {
   }
   return resolveExpressionStack(lexer, stack);
 }
-// function parseExpression(lexer: Lexer): AST.Node {
+// function parseExpression(lexer: Lexer): Node {
 //   let token = lexer.peekToken();
 //   switch (token.type) {
 //     case 'number': case 'string': case 'ident':
@@ -51,8 +51,8 @@ function parseExpression(lexer: Lexer): AST.Node {
 //   }
 // }
 
-function parseList(lexer: Lexer): AST.Node {
-  const elements: AST.Node[] = [];
+function parseList(lexer: Lexer): Node {
+  const elements: Node[] = [];
 
   while (true) {
     const token = lexer.peekToken();
@@ -68,50 +68,50 @@ function parseList(lexer: Lexer): AST.Node {
     }
   }
 
-  const listNode = AST.list();
+  const listNode = list();
   listNode.children = elements;
   return listNode;
 }
 
-function parseFunctionDeclaration(lexer: Lexer): AST.Node {
+function parseFunctionDeclaration(lexer: Lexer): Node {
   lexer.eatToken('ident', 'fun');
   const funcname = lexer.eatToken('ident').value;
-  let params: AST.Node[] = [];
+  let params: Node[] = [];
   while(true) {
     const token = lexer.eatToken();
     if (token.value === ')') break;
     if (token.type !== 'ident') lexer.error("Expected parameter identifier");
-    params.push(AST.ident(token.value));
+    params.push(ident(token.value));
     // TODO: opt type, e.g. 'float' in 'foo(x float)'
   }
   const t = lexer.eatTokenIfType('op', ':');
   const rtype = (t) ? lexer.eatToken().value : null; // consume optional return type
   const body = parseList(lexer);
-  return AST.def(funcname, AST.func(params, body, rtype), rtype);
+  return def(funcname, func(params, body, rtype), rtype);
 }
 
-function parseOperation(lexer: Lexer): AST.Node {
+function parseOperation(lexer: Lexer): Node {
   let operator = lexer.eatToken('op').value;
   let operands = [parseAtom(lexer), parseAtom(lexer)]; // TODO: unary/ternary
-  return AST.op(operator, operands);
+  return op(operator, operands);
 }
 
-function parseVariableDeclaration(lexer: Lexer): AST.Node {
+function parseVariableDeclaration(lexer: Lexer): Node {
   const varname = lexer.eatToken('ident').value;
   const type = lexer.eatTokenIfType('ident')?.value; // e.g. "float"
   lexer.eatToken('op', '=');
   const value = parseExpression(lexer);
-  return AST.def(varname, value, type);
+  return def(varname, value, type);
 }
 
-function parseControl(lexer: Lexer): AST.Node {
+function parseControl(lexer: Lexer): Node {
   let type = lexer.eatToken().value; // e.g. 'if', 'while'
   let condition = parseExpression(lexer); // parse condition
   let body = parseList(lexer); // parse body
-  return AST.ctrl(type, condition, body);
+  return ctrl(type, condition, body);
 }
 
-function parseSexpr(lexer: Lexer): AST.Node {
+function parseSexpr(lexer: Lexer): Node {
   if (lexer.peekToken().value === '(') {
     lexer.eatToken('op', '(');
     return parseSexprList(lexer); // TODO: check cases
@@ -120,57 +120,31 @@ function parseSexpr(lexer: Lexer): AST.Node {
   }
 }
 
-export function parseSexprList(lexer: Lexer): AST.Node {
-  let list = AST.list();
+export function parseSexprList(lexer: Lexer): Node {
+  let x = list();
   while(lexer.peekToken()) {
     if (lexer.peekToken().value === ')' ) { lexer.eatToken('op', ')'); break; } // TODO: might accept extra ')' at eof..
-    list.children!.push( parseSexpr(lexer) );
+    x.children!.push( parseSexpr(lexer) );
   }
-  return list;
+  return x;
 }
 
-export function parseNihStmt(lexer: Lexer): AST.Node {
+export function parseStmt(lexer: Lexer): Node | undefined {
   const t = lexer.peekToken();
   if (t.type == 'ident') {
-    // TODO: fun, set, call... except this ain't S-expr..
-    //    foo = 42, bar(42), 
-    switch(t.value) {
-      case 'fun': // function declaration
-        parseFunctionDeclaration(lexer);
-        break;
-    case 'ident':
-      // TODO:
+    // TODO: the usual recursive descent
+    // let sexpr = parse(lexer);
+    // list = addchild(list, sexpr);
   }
+  return undefined;
 }
 
-export function parseNih(lexer: Lexer): AST.Node {
-  let list = AST.list();
+export function parseModule(lexer: Lexer): Node {
+  // TODO: if we encounter #pragma to switch S-expression, handle it (TODO: also pragma to switch back from sexpr? Also one-liner sexprs.)
+  let x = list();
   let t;
   while(t = lexer.peekTokenCanBeEof()) {
-    if (t.type == 'keyword') {
-      // TODO: fun, set, call... except this ain't S-expr..
-      //    foo = 42, bar(42), 
-      switch(t.value) {
-        case 'fun': // function declaration
-          parseFunctionDeclaration(lexer);
-          break;
-      case 'ident':
-          // TODO:
-    }
-
-    // TODO: branch depending on first token, dat recursive descent!
-
-
-    let sexpr = parse(lexer);
-    list = AST.addchild(list, sexpr);
+    x = addChild(x, parseStmt(lexer));
   }
-  return list;  
-}
-
-export function parse(lexer: Lexer): AST.Node {
-  if (lexer.nih()) {
-    return parseNih(lexer);
-  } else {
-    return parseSexprList(lexer);
-  }
+  return x;
 }
