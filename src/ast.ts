@@ -1,4 +1,4 @@
-import { assert } from "./util";
+import { assert } from './util.js'; // TODO
 
 type NodeT = 'list'
             | 'ident'
@@ -10,7 +10,7 @@ type NodeT = 'list'
             | 'ctrl'
             | 'def'
             | 'return';
-  
+
 export interface Node {
   type: NodeT;
   str?: string; // name, value, op - anything that has a string representation

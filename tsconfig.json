@@ -1,10 +1,11 @@
 {
   "compilerOptions": {
-    "target": "es2022",
+    "target": "ESNext",
+    "module": "ESNext",
     "outDir": "dist",
+    "moduleResolution": "node",
     "sourceMap": true,
-    "module": "es2022",
-    "lib": ["es2022"],
+    //"lib": ["es2022"],
     "esModuleInterop": true,
 
     "allowJs": true,
@@ -12,9 +13,8 @@
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "useDefineForClassFields": true,
-    "resolveJsonModule": true,
+    //"resolveJsonModule": true,
     "skipLibCheck": true,
-    "moduleResolution": "node",
 
     /* Linting */
     "alwaysStrict": true,

@@ -1,7 +1,7 @@
-import { debugDump } from './lib/ast.js';
-import { emitJs } from './lib/emitjs.js';
-import { Lexer } from './lib/lexer.js';
-import { parseModule } from './lib/parser.js';
+import { debugDump } from './ast';
+import { emitJs } from './emitjs';
+import { Lexer } from './lexer';
+import { parseModule } from './parser';
 import { readFileSync } from 'fs';
 
 //------------------------------------------------------------------------

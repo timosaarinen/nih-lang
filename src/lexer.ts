@@ -1,5 +1,5 @@
-import { isDigit, isLetter, parseName, skipToNextLine, stripNewlines } from "./util.js";
-import { isKeyword, matchKeyword, matchOperator } from "./langdef.js"
+import { isDigit, isLetter, parseName, skipToNextLine, stripNewlines } from './util';
+import { isKeyword, matchKeyword, matchOperator } from './langdef';
 
 type TokenType = 
   'keyword' | // NIH language keyword, e.g. 'fun', 'for'..

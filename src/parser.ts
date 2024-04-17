@@ -1,5 +1,5 @@
-import { Lexer } from "./lexer.js"; // TODO: fix for requiring '.js'
-import { Node, addChild, def, func, ident, list, numlit, op, strlit, ctrl } from './ast.js'
+import { Lexer } from './lexer';
+import { Node, addChild, def, func, ident, list, numlit, op, strlit, ctrl } from './ast';
 
 function parseAtom(lexer: Lexer): Node {
   const t = lexer.eatToken();

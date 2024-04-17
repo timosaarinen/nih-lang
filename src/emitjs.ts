@@ -1,5 +1,5 @@
-import { Node, foreach, foreachStartAt, id, isId, number } from "./ast.js";
-import { error } from "./util.js";
+import { Node, foreach, foreachStartAt, id, isId, number } from './ast';
+import { error } from './util';
 
 const prefixJs = `
 //<<<library code>>>
