@@ -60,10 +60,21 @@ const ntypeSet = new Set(ntypes);
 //------------------------------------------------------------------------
 //  Native functions/macros
 //------------------------------------------------------------------------
-// TODO: add more native functions: "\\b(sin|cos|tan|asin|acos|atan|exp|exp2|log|log2|pow|sqrt|invsqrt|abs|sign|floor|ceil|trunc|fract|mod|min|max|clamp|saturate|mix|lerp|smoothstep|step|length|distance|dot|cross|normalize|reflect|refract|inverse|transpose|texture|texturesize|ddx|ddy|rand|degrees|radians|time|resolution)\\b"
 const nfuncs = [
-  'log',
-  'printchars', 'printlf', 'print', 
+  'abs', 'asin', 'acos', 'atan',
+  'ceil', 'clamp', 'cos', 'cross', 
+  'degrees', 'ddx', 'ddy', 'ddz', 'distance', 'dot',
+  'exp2', 'exp',
+  'fract', 'floor',
+  'inverse', 'invsqrt',
+  'length', 'lerp',
+  'min', 'mix', 'mod',
+  'normalize',
+  'log2', 'log',
+  'radians', 'rand',
+  'pow', 'printchars', 'printlf', 'print', 
+  'saturate', 'sign', 'sin', 'smoothstep', 'step', 'sqrt',
+  'tan', 'texturesize', 'transpose', 'trunc', 
 ];
 const nfuncSet = new Set(nfuncs);
 //------------------------------------------------------------------------
