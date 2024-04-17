@@ -1,37 +1,37 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Language IDE</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror/lib/codemirror.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror/theme/dracula.css">
-    <style>
-        body, html {
-            height: 100%;
-            margin: 0;
-            display: flex;
-            flex-direction: column; /* This aligns the children vertically */
-            font-family: Arial, sans-serif;
-        }
-        #editor, #output {
-            width: 100%;
-            height: 50%; /* Each div takes up half of the vertical space */
-        }
-        #output {
-            background-color: #333;
-            color: #fff;
-            overflow-y: auto;
-            padding: 20px;
-            box-sizing: border-box;
-        }
-    </style>
-</head>
-<body>
-    <div id="editor"></div>
-    <div id="output">(Compiler/execution output will appear here)</div>
-    <script src="https://cdn.jsdelivr.net/npm/codemirror/lib/codemirror.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/codemirror/mode/javascript/javascript.js"></script>
-    <script src="/js/editor.js"></script>
-</body>
+  <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>NIH playground</title>
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror/lib/codemirror.css">
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror/theme/dracula.css">
+      <style>
+          body, html {
+              height: 100%;
+              margin: 0;
+              display: flex;
+              flex-direction: column; /* This aligns the children vertically */
+              font-family: Arial, sans-serif;
+          }
+          #editor, #output {
+              width: 100%;
+              height: 50%; /* Each div takes up half of the vertical space */
+          }
+          #output {
+              background-color: #333;
+              color: #fff;
+              overflow-y: auto;
+              padding: 20px;
+              box-sizing: border-box;
+          }
+      </style>
+  </head>
+  <body>
+      <div id="editor"></div>
+      <div id="output">(Compiler/execution output will appear here)</div>
+      <script src="https://cdn.jsdelivr.net/npm/codemirror/lib/codemirror.js"></script>
+      <script src="https://cdn.jsdelivr.net/npm/codemirror/mode/javascript/javascript.js"></script>
+      <script src="/js/editor.js"></script>
+  </body>
 </html>
