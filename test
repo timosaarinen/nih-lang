@@ -1,0 +1,4 @@
+#/bin/bash
+./nih example/hiihoo.nih.sexpr
+./nih example/mandelbrot.nih.sexpr
+./nih example/mandelbrot.nih

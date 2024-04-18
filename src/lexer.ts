@@ -1,4 +1,4 @@
-import { isDigit, isLetter, parseName, skipToNextLine, stripNewlines } from './util';
+import { isDigit, isLetter, parseName, skipToNextLine, stripNewlines, strmatch } from './util';
 import { isKeyword, matchKeyword, matchOperator } from './langdef';
 
 type TokenType = 
@@ -101,13 +101,9 @@ export class Lexer {
       }
 
       //---- #pragma -----------------------------------------------------
-      if (char == '#') { 
-        const [name,] = parseName(src, index);
-        switch(name) {
-          case '#lang:nih-sexpr': this.lang = 'nih-sexpr'; break;
-          default:
-        }
-        continue;
+      if (char == '#') {
+        let end: number | null;
+        if (end = strmatch('#lang = nih-sexpr', src, index)) { this.lang = 'nih-sexpr'; index = end; continue; }
       }
 
       //---- Identifiers -------------------------------------------------

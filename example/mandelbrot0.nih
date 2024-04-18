@@ -1,3 +1,4 @@
+#lang = nih-sexpr
 (let WIDTH 16)
 (let HEIGHT 16)
 

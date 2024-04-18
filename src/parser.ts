@@ -140,11 +140,14 @@ export function parseStmt(lexer: Lexer): Node | undefined {
 }
 
 export function parseModule(lexer: Lexer): Node {
-  // TODO: if we encounter #pragma to switch S-expression, handle it (TODO: also pragma to switch back from sexpr? Also one-liner sexprs.)
   let x = list();
   let t;
   while(t = lexer.peekTokenCanBeEof()) {
-    x = addChild(x, parseStmt(lexer));
+    if (lexer.lang == 'nih-sexpr') {
+      return parseSexprList(lexer); // TODO: should be able to switch back as well!
+    } else {
+      x = addChild(x, parseStmt(lexer));
+    }
   }
   return x;
 }

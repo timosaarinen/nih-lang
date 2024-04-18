@@ -4,12 +4,9 @@
   "description": "NIH programming language",
   "type": "module",
   "scripts": {
-    "dev": "vite-node index.js",
-    "build": "vite build",
-    "start": "node --enable-source-maps dist/nih.js example/hiihoo.nih.sexpr",
-    "test": "jest",
-    "build:start": "npm run build && npm run start",
-    "build:test:start": "npm run build && npm run test && npm run start"
+    "start": "vite-node dist/nih.js example/hiihoo.nih.sexpr",
+    "build": "tsc",
+    "doeet": "tsc && ./test && vite-node dist/nih.js example/hiihoo.nih.sexpr"
   },
   "devDependencies": {
     "@types/jest": "^29.5.12",
@@ -17,7 +14,6 @@
     "@typescript-eslint/eslint-plugin": "^7.2.0",
     "@typescript-eslint/parser": "^7.2.0",
     "eslint": "^8.57.0",
-    "jest": "^29.7.0",
     "prettier": "^3.1.0",
     "prettier-eslint": "^16.1.2",
     "ts-jest": "^29.1.2",

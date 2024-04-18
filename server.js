@@ -1,4 +1,5 @@
-import express from 'express'; 
+import express from 'express';
+import { execSync } from 'child_process';
 
 const app = express();
 const port = 3000;
@@ -7,9 +8,11 @@ app.use(express.json());
 
 app.post('/compile', (req, res) => {
   const { code } = req.body;
-  // Here, run your interpreter and capture stdout and stderr
-  const exec = require('child_process').exec;
-  exec(`echo "${code}" | mylang-interpreter`, (error, stdout, stderr) => {
+
+  // Run NIH and capture stdout/stderr
+  //  TODO: Could also run client-side, so no server req?
+  //execSync(`echo "${code}" | nih --stdin`, (error, stdout, stderr) => {
+  execSync(`echo "${code}"`, (error, stdout, stderr) => {
     if (error) {
       console.error(`exec error: ${error}`);
       return res.send({ output: `Error: ${stderr}` });
@@ -17,7 +20,6 @@ app.post('/compile', (req, res) => {
     res.send({ output: stdout });
   });
 });
-
 
 app.use(express.static('public'));
 app.listen(port, () => {

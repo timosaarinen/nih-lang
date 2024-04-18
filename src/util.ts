@@ -14,6 +14,15 @@ export function assert(shouldbetrue: boolean, msg?: string): any {
   return null;
 }
 
+// Match source (code) string at given index to the target string (which can contain spaces).
+// @returns null if not match or the index after the string (at next character)
+export function strmatch(target: string, source: string, startIndex: number): number | null {
+  if (source.substring(startIndex, startIndex + target.length) === target) {
+    return startIndex + target.length;
+  }
+  return null;
+}
+
 export function stripNewlines(str: string): string {
   return str.replace(/\r?\n|\r/g, "");
 }
