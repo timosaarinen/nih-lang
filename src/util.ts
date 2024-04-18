@@ -14,6 +14,11 @@ export function assert(shouldbetrue: boolean, msg?: string): any {
   return null;
 }
 
+export function debug(msg: string): any {
+  console.log(msg);
+  return '';
+}
+
 // Match source (code) string at given index to the target string (which can contain spaces).
 // @returns null if not match or the index after the string (at next character)
 export function strmatch(target: string, source: string, startIndex: number): number | null {

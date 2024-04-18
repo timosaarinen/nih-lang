@@ -9,14 +9,12 @@
     "doeet": "tsc && ./test && vite-node dist/nih.js example/hiihoo.nih.sexpr"
   },
   "devDependencies": {
-    "@types/jest": "^29.5.12",
     "@types/node": "^20.11.28",
     "@typescript-eslint/eslint-plugin": "^7.2.0",
     "@typescript-eslint/parser": "^7.2.0",
     "eslint": "^8.57.0",
     "prettier": "^3.1.0",
     "prettier-eslint": "^16.1.2",
-    "ts-jest": "^29.1.2",
     "ts-node": "^10.9.2",
     "typescript": "^4.4.4",
     "vite": "^5.2.9",

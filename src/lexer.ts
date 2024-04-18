@@ -1,4 +1,4 @@
-import { isDigit, isLetter, parseName, skipToNextLine, stripNewlines, strmatch } from './util';
+import { debug, isDigit, isLetter, parseName, skipToNextLine, stripNewlines, strmatch } from './util';
 import { isKeyword, matchKeyword, matchOperator } from './langdef';
 
 type TokenType = 
@@ -21,7 +21,7 @@ export class Lexer {
   private current: number = 0;
   private tokens: Token[] = [];
   private source: string = "";
-  private lineStart: number[] = [];
+  private lineStart: number[] = new Array<number>(0); //[];
   private filename: string;
   public lang: Lang = 'nih';
 
@@ -38,23 +38,30 @@ export class Lexer {
     this.lineStart = [0];
     this.current = 0;
 
-    const startNewline = (index: number) => { this.lineStart.push(index); return index; }
+    const self = this; // TODO: ..do NOT use classes in TS!
+    const startNewline = (index: number) => { console.log(self); console.log(self.lineStart); self.lineStart.push(index); return index; }
     const pushTokenOp = (op: string, pos: number) => 
-      this.tokens.push({type: 'op', value: op, posStartEnd: [pos, pos]});
+      self.tokens.push({type: 'op', value: op, posStartEnd: [pos, pos]});
     const pushTokenRange = (type: TokenType, value: string, start: number, end: number) => 
-      this.tokens.push({type: type, value, posStartEnd: [start, end]});
+      self.tokens.push({type: type, value, posStartEnd: [start, end]});
   
     //**** The main tokenizer loop ***************************************
     let index = 0;
+    let lastindex = -1;
     while (index < src.length) {
+      debug(`LEXER: index ${index}: ${src.substring(index, index+42)}`);
+      if (index === lastindex) this.error('TODO: buggy lexer, looping in the main tokenizer loop');
+      lastindex = index;
+
       const char = src[index];
       const nextchar = (index + 1) < src.length ? src[index+1] : '';
 
       //---- Newline -----------------------------------------------------
-      if (char === '\n') { startNewline(index+1); continue; }
+      if (char === '\n') { debug('-> newline'); index = startNewline(index+1); continue; }
 
       //---- Number literals ---------------------------------------------
       if (isDigit(char)) {
+        debug('-> number');
         let start = index;
         index++;
         while (isDigit(src[index])) {
@@ -68,6 +75,7 @@ export class Lexer {
       //---- String literals ---------------------------------------------
       // TODO: handle string interpolation in parser?
       if ("'\"`".includes(char)) {
+        debug('-> string literal');
         let start = ++index;
         while (index < src.length && src[index] !== char) { 
           index++;
@@ -80,6 +88,7 @@ export class Lexer {
       
       //---- Comments ----------------------------------------------------
       if ((char === '/' && nextchar === '/') || (char === '#' && /\s/.test(nextchar))) {
+        debug('-> line comment');
         index = startNewline(skipToNextLine(src, index));
         continue;
       }
@@ -88,6 +97,7 @@ export class Lexer {
       //---- Operators ---------------------------------------------------
       let opdesc = matchOperator(src, index);
       if (opdesc) {
+        debug('-> operator ${opdesc.str}');
         pushTokenOp(opdesc.str, index);
         index = opdesc.end + 1;
         continue;
@@ -96,18 +106,20 @@ export class Lexer {
       //---- Keywords ----------------------------------------------------
       let kwdesc = matchKeyword(src, index);
       if (kwdesc) {
-
-
+        debug('-> keyword ${kwdesc.str}');
+        // TODO: implement keywords
       }
 
       //---- #pragma -----------------------------------------------------
       if (char == '#') {
+        debug('-> pragma');
         let end: number | null;
-        if (end = strmatch('#lang = nih-sexpr', src, index)) { this.lang = 'nih-sexpr'; index = end; continue; }
+        if (end = strmatch('#lang = nih-sexpr', src, index)) { this.lang = 'nih-sexpr'; index = end; debug('** S-EXPRESSION MODE ENGAGED **'); continue; }
       }
 
       //---- Identifiers -------------------------------------------------
       if (isLetter(char)) {
+        debug('-> identifier');
         const [name, start, end] = parseName(src, index);
         pushTokenRange(isKeyword(name) ? 'keyword' : 'ident', name, start, end);
         index = end+1;
@@ -116,12 +128,14 @@ export class Lexer {
     
       //---- Whitespace --------------------------------------------------
       // NOTE: meaningful whitespace, so don't keep this as first (don't need to be last either, but.. good enough)
-      if (/\s/.test(char)) { 
+      if (/\s/.test(char)) {
+        debug('-> whitespace');
         index++; 
         continue; 
       }
 
       //---- If the execution went this far in the loop scope, it's time for....
+      debug('-> he went too far!');
       this.errorLine('SYNTAX ERROR!', index, index+1);
     }
   }
