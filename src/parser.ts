@@ -30,7 +30,7 @@ function resolveExpressionStack(lexer: Lexer, stack: Node[]): Node {
 function parseExpression(lexer: Lexer): Node {
   let stack = [];
   while (true) {
-    let token = lexer.peekTokenCanBeEof();
+    let token = lexer.peekToken();
     // TODO: use langdef.ts
     if (!token || ['+', '-', '*', '/', ')'].includes(token.type)) {
       break; // Stop at an operator or end of expression
@@ -122,7 +122,7 @@ function parseSexpr(lexer: Lexer): Node {
 
 export function parseSexprList(lexer: Lexer): Node {
   let x = list();
-  while(lexer.peekToken()) {
+  while(lexer.peekToken().type != 'eof') {
     if (lexer.peekToken().value === ')' ) { lexer.eatToken('op', ')'); break; } // TODO: might accept extra ')' at eof..
     x.children!.push( parseSexpr(lexer) );
   }
@@ -142,7 +142,7 @@ export function parseStmt(lexer: Lexer): Node | undefined {
 export function parseModule(lexer: Lexer): Node {
   let x = list();
   let t;
-  while(t = lexer.peekTokenCanBeEof()) {
+  while(t = lexer.peekToken()) {
     if (lexer.lang == 'nih-sexpr') {
       return parseSexprList(lexer); // TODO: should be able to switch back as well!
     } else {

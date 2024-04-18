@@ -1,7 +1,8 @@
 import { debug, isDigit, isLetter, parseName, skipToNextLine, stripNewlines, strmatch } from './util';
 import { isKeyword, matchKeyword, matchOperator } from './langdef';
 
-type TokenType = 
+type TokenType =
+  'eof' |     // Code stream ended
   'keyword' | // NIH language keyword, e.g. 'fun', 'for'..
   'ident' |   // identifier, name in value e.g. "foobar"
   'string' |  // literal string, content in value e.g. "Hello, World!"
@@ -31,19 +32,27 @@ export class Lexer {
     this.tokenize();
   }
 
+  // Main tokenizer method, tokenize()
+  private startNewline(index: number): number {
+    debug(this);
+    debug(this.lineStart);
+    this.lineStart.push(index);
+    return index;
+  }
+  private pushTokenOp(op: string, pos: number) { 
+    this.tokens.push({type: 'op', value: op, posStartEnd: [pos, pos]});
+  }
+  private pushTokenRange(type: TokenType, value: string, start: number, end: number) {
+    this.tokens.push({type: type, value, posStartEnd: [start, end]});
+  }
+  private eofToken(index: number): Token {
+    return {type: 'eof', value: 'EOF', posStartEnd: [index, index]};
+  }
   private tokenize() {
     const src = this.source;
-
     this.tokens = [];
     this.lineStart = [0];
     this.current = 0;
-
-    const self = this; // TODO: ..do NOT use classes in TS!
-    const startNewline = (index: number) => { console.log(self); console.log(self.lineStart); self.lineStart.push(index); return index; }
-    const pushTokenOp = (op: string, pos: number) => 
-      self.tokens.push({type: 'op', value: op, posStartEnd: [pos, pos]});
-    const pushTokenRange = (type: TokenType, value: string, start: number, end: number) => 
-      self.tokens.push({type: type, value, posStartEnd: [start, end]});
   
     //**** The main tokenizer loop ***************************************
     let index = 0;
@@ -57,7 +66,7 @@ export class Lexer {
       const nextchar = (index + 1) < src.length ? src[index+1] : '';
 
       //---- Newline -----------------------------------------------------
-      if (char === '\n') { debug('-> newline'); index = startNewline(index+1); continue; }
+      if (char === '\n') { debug('-> newline'); index = this.startNewline(index+1); continue; }
 
       //---- Number literals ---------------------------------------------
       if (isDigit(char)) {
@@ -68,7 +77,7 @@ export class Lexer {
           index++;
         }
         const value = src.slice(start, index);
-        pushTokenRange('number', value, start, index);
+        this.pushTokenRange('number', value, start, index);
         continue;
       }
 
@@ -81,7 +90,7 @@ export class Lexer {
           index++;
         }
         const value = src.slice(start, index);
-        pushTokenRange('string', value, start - 1, index + 1);
+        this.pushTokenRange('string', value, start - 1, index + 1);
         index++;
         continue;
       }
@@ -89,7 +98,7 @@ export class Lexer {
       //---- Comments ----------------------------------------------------
       if ((char === '/' && nextchar === '/') || (char === '#' && /\s/.test(nextchar))) {
         debug('-> line comment');
-        index = startNewline(skipToNextLine(src, index));
+        index = this.startNewline(skipToNextLine(src, index));
         continue;
       }
       // TODO: block comments /* */ - nestable!
@@ -97,16 +106,16 @@ export class Lexer {
       //---- Operators ---------------------------------------------------
       let opdesc = matchOperator(src, index);
       if (opdesc) {
-        debug('-> operator ${opdesc.str}');
-        pushTokenOp(opdesc.str, index);
-        index = opdesc.end + 1;
+        debug(`-> operator ${opdesc.str}`);
+        this.pushTokenOp(opdesc.str, index);
+        index = opdesc.end;
         continue;
       }
       
       //---- Keywords ----------------------------------------------------
       let kwdesc = matchKeyword(src, index);
       if (kwdesc) {
-        debug('-> keyword ${kwdesc.str}');
+        debug(`-> keyword ${kwdesc.str}`);
         // TODO: implement keywords
       }
 
@@ -121,7 +130,7 @@ export class Lexer {
       if (isLetter(char)) {
         debug('-> identifier');
         const [name, start, end] = parseName(src, index);
-        pushTokenRange(isKeyword(name) ? 'keyword' : 'ident', name, start, end);
+        this.pushTokenRange(isKeyword(name) ? 'keyword' : 'ident', name, start, end);
         index = end+1;
         continue;
       }
@@ -140,16 +149,9 @@ export class Lexer {
     }
   }
 
-  public peekTokenCanBeEof(lookahead: number = 0): Token | null {
-    const position = this.current + lookahead;
-    return position < this.tokens.length ? this.tokens[position] : null;
-  }
   public peekToken(lookahead: number = 0): Token {
     const position = this.current + lookahead;
-    if (position >= this.tokens.length) {
-      this.error("Unexpected end-of-file after", this.tokens[this.current + lookahead - 1]);
-    }
-    return this.tokens[position];
+    return position < this.tokens.length ? this.tokens[position] : this.eofToken(this.current);
   }
 
   public eatToken(expectedType?: TokenType, expectedValue? : string): Token {
@@ -187,10 +189,9 @@ export class Lexer {
   }
 
   public debugDump() {
-    for(let tok = this.eatToken(); tok; tok = this.eatToken()) {
-      console.log(tok);
-    }
-    this.current = 0; 
+    this.tokens.forEach((t) => {
+      console.log(t);
+    });
   }
 
   public getLineAndColumn(position: number): { line: number, column: number } {

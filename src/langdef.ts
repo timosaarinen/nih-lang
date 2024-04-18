@@ -19,6 +19,7 @@ const operators = [                                                        // Op
   '<<<', '>>>', '<<@', '>>@', '<<', '>>', '~', '^^',                       //  bitwise
   '.',                                                                     //  dot
   '?',                                                                     //  ternary
+  '(', ')',                                                                //  ..let's not forget parens..
 ];
 const operatorSet = new Set(operators);
 //------------------------------------------------------------------------

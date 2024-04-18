@@ -14,10 +14,14 @@ export function assert(shouldbetrue: boolean, msg?: string): any {
   return null;
 }
 
-export function debug(msg: string): any {
-  console.log(msg);
-  return '';
+export function debug(...args: any[]): any {
+  const message = args.map(arg => 
+    typeof arg === 'object' ? JSON.stringify(arg) : String(arg)
+  ).join(' ');
+
+  console.log(message);
 }
+
 
 // Match source (code) string at given index to the target string (which can contain spaces).
 // @returns null if not match or the index after the string (at next character)
