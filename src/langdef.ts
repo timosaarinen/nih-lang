@@ -12,7 +12,8 @@ const operators = [                                                        // Op
   '+=', '-=', '*=', '/=', '%=', '**=', '|>=', '=',                         //  assignment
   '^',                                                                     //  exponentation (NOTE: bitwise xor is '^^')
   ' + ', ' - ', ' * ', ' / ', ' % ',                                       //  arithmetic
-  '+', '-',                                                                //  unary
+  '+', '-',                                                                //  unary / arithmetic in sexpr
+  '*', '/',                                                                //  arithmetic in sexpr
   '|>',                                                                    //  piping/chaining
   '!', '&&', '||',                                                         //  logical
   '&', '|',                                                                //  logical/bitwise
@@ -20,6 +21,7 @@ const operators = [                                                        // Op
   '.',                                                                     //  dot
   '?',                                                                     //  ternary
   '(', ')',                                                                //  ..let's not forget parens..
+  ':',                                                                     //  block begin / type annotations in sexpr
 ];
 const operatorSet = new Set(operators);
 //------------------------------------------------------------------------
