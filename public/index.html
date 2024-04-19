@@ -16,8 +16,8 @@
               left: 0px;
               top: 0px;
               z-index: 100;
-              width: 55%;
-              height: 80%;
+              width: 48%;
+              height: 100%;
               background-color: rgba(0, 0, 0, 0.5); 
               color: #fff;
               overflow: hidden; /*auto;*/
@@ -30,8 +30,22 @@
               right: 0px;
               top: 0px;
               z-index: 100;
-              width: 45%;
-              height: 80%;
+              width: 48%;
+              height: 50%;
+              background-color: rgba(0, 0, 0, 0.0); 
+              color: #fff;
+              overflow-y: hidden; /*auto;*/
+              margin: 0px;
+              padding: 8px;
+              box-sizing: border-box;
+          }
+          #repl {
+              position: fixed;
+              right: 0px;
+              top: 50%;
+              z-index: 101;
+              width: 48%;
+              height: 50%;
               background-color: rgba(0, 0, 0, 0.0); 
               color: #fff;
               overflow-y: hidden; /*auto;*/
@@ -44,6 +58,7 @@
   <body>
       <div id="editor"></div>
       <div id="output">(Compiler/execution output will appear here)</div>
+      <div id="repl">(REPL here)</div>
       <script type="module" src="/js/editor.js"></script>
   </body>
 </html>
