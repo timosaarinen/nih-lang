@@ -4,9 +4,12 @@
   "description": "NIH programming language",
   "type": "module",
   "scripts": {
-    "start": "vite-node dist/nih.js example/hiihoo.nih.sexpr",
+    "index": "vite-node index.js",
+    "editor": "vite dev",
+    "http-serverr": "npx http-server",
+    "start": "vite-node dist/nih.js example/hiihoo.nih",
     "build": "tsc",
-    "doeet": "tsc && ./test && vite-node dist/nih.js example/hiihoo.nih.sexpr"
+    "doeet": "tsc && ./test && vite-node dist/nih.js example/mandelbrot0.nih"
   },
   "devDependencies": {
     "@types/node": "^20.11.28",
@@ -31,6 +34,7 @@
   },
   "homepage": "https://github.com/timosaarinen/nih-lang#readme",
   "dependencies": {
-    "express": "^4.19.2"
+    "express": "^4.19.2",
+    "three": "^0.163.0"
   }
 }

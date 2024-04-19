@@ -26,12 +26,21 @@
               box-sizing: border-box;
           }
       </style>
+      <script type="importmap">
+        {
+          "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@<version>/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@<version>/examples/jsm/"
+          }
+        }
+      </script>
   </head>
   <body>
       <div id="editor"></div>
       <div id="output">(Compiler/execution output will appear here)</div>
+      <script src="https://cdn.jsdelivr.net/npm/three/build/three.min.js"></script>
       <script src="https://cdn.jsdelivr.net/npm/codemirror/lib/codemirror.js"></script>
       <script src="https://cdn.jsdelivr.net/npm/codemirror/mode/javascript/javascript.js"></script>
-      <script src="/js/editor.js"></script>
+      <script type="module" src="/js/editor.js"></script>
   </body>
 </html>
