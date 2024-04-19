@@ -7,7 +7,7 @@ const initialCode =
 (let WIDTH 16)
 (let HEIGHT 16)
 
-(fun :int mandelbrot (:float cx :float cy)
+(:int fun mandelbrot (:float cx :float cy)
   (doc "@returns # of iterations (0 if not in Mandelbrot set)")
   (let maxiters 80)
   (set! zx 0)
