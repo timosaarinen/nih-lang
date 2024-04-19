@@ -17,19 +17,29 @@ function sexprParseAtom(lexer: Lexer): Node {
   }
 }
 
+function sexprRest(lexer: Lexer): Node[] {
+  // TODO: if (t.value === ')') { lexer.eatToken(); return gen(op ? op : 'do', c); } ?
+  let c: Node[] = [];
+  while(lexer.peekToken().value !== ')') {
+    assert(lexer.peekToken().type !== 'eof', 'Missing a closing paren? Parsed the file to the end and by my counts.. missing one, nih!');
+    c.push(sexprParseExpr(lexer));
+  }
+  lexer.eatToken('op', ')');
+  return c;
+}
+
 function sexprParseList(lexer: Lexer, op?: string): Node {
   const c: Node[] = [];
   lexer.eatToken('op', '(');
-  for (;;) {
-    const t = lexer.peekToken();
-    assert(t.type !== 'eof', 'Missing a closing paren? Parsed the file to the end and by my counts.. missing one, nih!');
-    if (t.value === ')') { lexer.eatToken(); return gen(op ? op : 'do', c); }
-    if (t.value === '(') { c.push(sexprParseList(lexer)); }
-    c.push(sexprParseAtom(lexer));
+
+  const first = lexer.eatToken(); // TODO: allow empty ()?
+  switch (first.value) {
+    case 'let': return gen('let', sexprRest(lexer));
+    default:    lexer.error('TODO: tell the lazy compiler developer to implement this: ${first.value}, nih!');
   }
 }
 
-function sexprParse(lexer: Lexer): Node {
+function sexprParseExpr(lexer: Lexer): Node {
   return (lexer.peekToken().value === '(') ? sexprParseList(lexer) : sexprParseAtom(lexer);
 }
 
@@ -89,7 +99,7 @@ function sexprParse(lexer: Lexer): Node {
 // }
 
 function parseExpr(lexer: Lexer): Node {
-  return sexprParse(lexer); // TODO
+  return sexprParseExpr(lexer); // TODO
 }
 
 function parseOp(lexer: Lexer): Node {
@@ -125,7 +135,7 @@ export function parseStmt(lexer: Lexer): Node {
 }
 
 export function parseModule(lexer: Lexer): Node {
-  if (lexer.lang == 'nih-sexpr') return sexprParse(lexer); // TODO: allow the switching!
+  if (lexer.lang == 'nih-sexpr') return sexprParseExpr(lexer); // TODO: allow the switching!
   
   let c: Node[] = [];
   while(lexer.peekToken().type != 'eof') {

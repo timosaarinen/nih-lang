@@ -4,9 +4,9 @@ import { isKeyword, matchKeyword, matchOperator } from './langdef';
 type TokenType =
   'eof' |     // Code stream ended
   'keyword' | // NIH language keyword, e.g. 'fun', 'for'..
-  'ident' |   // identifier, name in value e.g. "foobar"
-  'string' |  // literal string, content in value e.g. "Hello, World!"
-  'number' |  // number literal, string representation in value e.g. "42" or "3.141592"
+  'ident' |   // identifier, name in value, e.g. 'foobar'
+  'string' |  // literal string, content in value, e.g. "Hello, World!"
+  'number' |  // number literal, string representation in value e.g. '42' or '3.141592'
   'op';       // all one or two character operators - in value e.g. '+', '-', '?', '(', '&&'
 
 type Lang = 
