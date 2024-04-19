@@ -10,25 +10,25 @@ const scene = new THREE.Scene();
 
 // Camera setup
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-camera.position.z = 1.2;
+camera.position.z = 42.0;
 
 // Renderer setup
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-// Create a cube
-const geometry = new THREE.BoxGeometry();
-const material = new THREE.MeshPhongMaterial({ });
+// Create a 3D object
+const geometry = new THREE.TorusKnotGeometry( 22, 6, 420, 128 );
+const material = new THREE.MeshPhysicalMaterial({});
 const cube = new THREE.Mesh(geometry, material);
 scene.add(cube);
 
-// Add directional lights
-const directionalLight = new THREE.DirectionalLight(0xffff10, 5.0);
-directionalLight.position.set(5, 3, 5);
-scene.add(directionalLight);
+// Add a light
+const light = new THREE.SpotLight(0xa0fff0, 4000.0);
+light.position.set(-20, 30, -10);
+scene.add(light);
 
-const h = new THREE.HemisphereLight(0x4080ff, 0x081040, 1.0);
+const h = new THREE.HemisphereLight(0x4080ff, 0xff1040, 0.05);
 scene.add(h);
 
 // Animation loop
