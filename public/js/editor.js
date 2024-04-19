@@ -1,3 +1,4 @@
+import { compileAndRun } from '../../dist/nihlib'
 import * as THREE from 'three';
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
 
@@ -123,5 +124,7 @@ document.addEventListener('DOMContentLoaded', function() {
       enabled: false, //true,
     },
   });
+
+  compileAndRun(initialCode);
 
 });
