@@ -96,13 +96,7 @@ const getEditorElement = () => {
   return document.getElementById('editor');
 }
 
-const onchange = () => {
-  console.log("TODO: Code changed - recompiling..");
-  document.getElementById('output').textContent = 'Compile #' + (numChanges++);
-}
-
 document.addEventListener('DOMContentLoaded', function() {
-
   monaco.editor.defineTheme('nih', {
     base: 'hc-black',
     inherit: true,
@@ -116,7 +110,7 @@ document.addEventListener('DOMContentLoaded', function() {
         'editor.background': '#10101080',
   }});
 
-  monaco.editor.create(getEditorElement(), {
+  let editor = monaco.editor.create(getEditorElement(), {
     value: initialCode,
     language: 'nih!', // TODO:
     theme: 'nih',
@@ -125,6 +119,13 @@ document.addEventListener('DOMContentLoaded', function() {
     },
   });
 
+  editor.onDidChangeModelContent((event) => {
+    console.log("****************** Code changed - Recompiling ***********************");
+    document.getElementById('output').textContent = '[Build #' + (numChanges++) + ']';
+    console.log(editor.getValue());
+    console.log(event);
+    // TODO: compile and run, pass 'printchars' function to capture output
+    //compileAndRun(initialCode);
+  });
   compileAndRun(initialCode);
-
 });
