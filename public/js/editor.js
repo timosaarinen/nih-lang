@@ -1,7 +1,7 @@
 import * as THREE from 'three';
+import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
 
-const initialCode = `
-// Start typing your code here
+const initialCode = `// Start typing your code here
 print 'Hello, world!'`;
 
 //------------------------------------------------------------------------
@@ -10,6 +10,7 @@ const scene = new THREE.Scene();
 
 // Camera setup
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+camera.position.z = 1.2;
 
 // Renderer setup
 const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -22,13 +23,13 @@ const material = new THREE.MeshPhongMaterial({ });
 const cube = new THREE.Mesh(geometry, material);
 scene.add(cube);
 
-// Add directional light
-const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
+// Add directional lights
+const directionalLight = new THREE.DirectionalLight(0xffff10, 5.0);
 directionalLight.position.set(5, 3, 5);
 scene.add(directionalLight);
 
-// Set camera position
-camera.position.z = 1.2; //5;
+const h = new THREE.HemisphereLight(0x4080ff, 0x081040, 1.0);
+scene.add(h);
 
 // Animation loop
 function animate() {
@@ -55,28 +56,26 @@ function onWindowResize() {
 
 
 //------------------------------------------------------------------------
+let numChanges = 0;
+
+const getEditorElement = () => {
+  return document.getElementById('editor');
+}
+
+const onchange = () => {
+  console.log("TODO: Code changed - recompiling..");
+  document.getElementById('output').textContent = 'Compile #' + (numChanges++);
+}
+
 document.addEventListener('DOMContentLoaded', function() {
 
-  const editor = CodeMirror(document.getElementById('editor'), {
-      mode: 'javascript',
-      theme: 'dracula',
-      lineNumbers: true,
-      value: initialCode
+  monaco.editor.create(getEditorElement(), {
+    value: initialCode,
+    language: 'nih', // TODO:
+    theme: 'vs-dark',
+    minimap: {
+      enabled: true,
+    },
   });
-  editor.setSize("100%", "100%");
 
-  editor.on('change', function() {
-      fetch('/compile', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ code: editor.getValue() })
-      })
-      .then(response => response.json())
-      .then(data => {
-          document.getElementById('output').textContent = data.output;
-      })
-      .catch(error => {
-          document.getElementById('output').textContent = 'Error: ' + error;
-      });
-  });
 });
