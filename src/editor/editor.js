@@ -1,4 +1,4 @@
-import { compileAndRun } from '../../dist/nihlib'
+import { compileAndRun } from '../../src/nihlib'
 import * as THREE from 'three';
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
 

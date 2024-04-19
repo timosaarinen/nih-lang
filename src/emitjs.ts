@@ -36,7 +36,7 @@ function emit(n: Node): string {
     case 'op':
       switch (n.str) {
         case 'call':  return `${id(n)}(${foreachStartAt(n, 1, emit).join(', ')})`;
-        default:      error(`Unhandled op: ${n.str}`); return '';
+        default:      error(`Unhandled op.. ${n.str}`); return '';
       }
     case 'return': // TODO: should be 'op'?
       return 'return ';

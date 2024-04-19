@@ -36,6 +36,8 @@
   "dependencies": {
     "express": "^4.19.2",
     "monaco-editor": "^0.47.0",
-    "three": "^0.163.0"
+    "three": "^0.163.0",
+    "tslib": "^2.6.2",
+    "vite-plugin-typescript": "^1.0.4"
   }
 }
