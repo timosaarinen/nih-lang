@@ -67,7 +67,7 @@
         "patterns": [
             {
                 "name": "keyword.control.nih",
-                "match": "\\b(if|else|do|while|for|break|continue|return|switch|case|default|struct|enum|type|alias|const|pure|fun|uniform|let|get|set|inc|dec|call|doc)\\b"
+                "match": "\\b(if|else|do|while|for|break|continue|return|switch|case|default|struct|enum|type|alias|const|pure|fun|fn|uniform|let|get|set|inc|dec|call|doc)\\b"
             }
         ]
     },

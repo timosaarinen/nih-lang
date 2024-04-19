@@ -1,8 +1,8 @@
 import { debugDump } from './ast';
 import { emitJs } from './emitjs';
 import { Lexer } from './lexer';
-import { parseModule } from './parser';
 import { readFileSync } from 'fs';
+import { parseModule } from './parser';
 
 //------------------------------------------------------------------------
 function loadSourceFromFile(filename: string): string {

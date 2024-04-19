@@ -2,7 +2,7 @@
 WIDTH = 16
 HEIGHT = 16
 
-fun mandelbrot(cx float, cy float) int:
+:float mandelbrot(:float cx, :float cy)
   // @returns # of iterations (0 if not in Mandelbrot set)
   maxiters = 80
   zx := 0
@@ -15,7 +15,7 @@ fun mandelbrot(cx float, cy float) int:
     zy := py + cy
     d = sqrt(zx^2 + zy^2)
     n++
-    if d > 2 return 0.0 // not in Mandelbrot set?
+    if d > 2 return 0 // if not in Mandelbrot set, early return
   while n < maxiters
   return n
 
@@ -25,10 +25,10 @@ re = 1.0
 is = -1.0
 e = 1.0
 
-for i = 0..<WIDTH:
-  for j = 0..<HEIGHT:
-    cx = rs + float(i)/WIDTH * (re - rs)
-    cy = is + float(j)/HEIGHT * (ie - is)
+for i = 0..WIDTH
+  for j = 0..HEIGHT
+    cx = rs + :float i / WIDTH * (re - rs)
+    cy = is + :float j / HEIGHT * (ie - is)
     m = mandelbrot(cx, cy)
     printchars(m > 0.0 ? '*' : ' ')
   printlf()

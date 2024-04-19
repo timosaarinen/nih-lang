@@ -1,44 +1,64 @@
 import { Lexer } from './lexer';
-import { Node, addChild, def, func, ident, list, numlit, op, strlit, ctrl } from './ast';
+import { Node, ident, module, numlit, strlit, op, gen } from './ast';
+import { assert } from './util';
 
-function parseAtom(lexer: Lexer): Node {
+//------------------------------------------------------------------------
+function sexprParseAtom(lexer: Lexer): Node {
   const t = lexer.eatToken();
   switch (t.type) {
     case 'number':
-      return numlit(parseFloat(t.value));
+      return numlit(t.value, parseFloat(t.value));
     case 'string':
       return strlit(t.value);
     case 'ident':
       return ident(t.value);
     default:
-      lexer.error(`Unexpected token: ${t.type}`, t);
+      lexer.error(`Expected atom but got: ${t.type}`, t);
   }
 }
 
-function resolveExpressionStack(lexer: Lexer, stack: Node[]): Node {
-  // TODO: precedence and associativity rules - for KISS, left-associative binary operations for now
-  let result = stack[0];
-  for (let i = 1; i < stack.length; i += 2) {
-    let operator = stack[i].str;
-    if (typeof operator !== 'string') lexer.error("Invalid operator");
-    let rightOperand = stack[i + 1];
-    result = op(operator, [result, rightOperand]);
+function sexprParseList(lexer: Lexer, op?: string): Node {
+  const c: Node[] = [];
+  lexer.eatToken('op', '(');
+  for (;;) {
+    const t = lexer.peekToken();
+    assert(t.type !== 'eof', 'Missing a closing paren? Parsed the file to the end and by my counts.. missing one, nih!');
+    if (t.value === ')') { lexer.eatToken(); return gen(op ? op : 'do', c); }
+    if (t.value === '(') { c.push(sexprParseList(lexer)); }
+    c.push(sexprParseAtom(lexer));
   }
-  return result;
 }
 
-function parseExpression(lexer: Lexer): Node {
-  let stack = [];
-  while (true) {
-    let token = lexer.peekToken();
-    // TODO: use langdef.ts
-    if (!token || ['+', '-', '*', '/', ')'].includes(token.type)) {
-      break; // Stop at an operator or end of expression
-    }
-    stack.push(parseAtom(lexer));
-  }
-  return resolveExpressionStack(lexer, stack);
+function sexprParse(lexer: Lexer): Node {
+  return (lexer.peekToken().value === '(') ? sexprParseList(lexer) : sexprParseAtom(lexer);
 }
+
+//------------------------------------------------------------------------
+// function resolveExpressionStack(lexer: Lexer, stack: Node[]): Node {
+//   // TODO: precedence and associativity rules - for KISS, left-associative binary operations for now
+//   let result = stack[0];
+//   for (let i = 1; i < stack.length; i += 2) {
+//     let operator = stack[i].str;
+//     if (typeof operator !== 'string') lexer.error("Invalid operator");
+//     let rightOperand = stack[i + 1];
+//     result = op(operator, [result, rightOperand]);
+//   }
+//   return result;
+// }
+
+// function parseExpression(lexer: Lexer): Node {
+//   let stack = [];
+//   while (true) {
+//     let token = lexer.peekToken();
+//     // TODO: use langdef.ts
+//     if (!token || ['+', '-', '*', '/', ')'].includes(token.type)) {
+//       break; // Stop at an operator or end of expression
+//     }
+//     stack.push(sexprParseAtom(lexer));
+//   }
+//   return resolveExpressionStack(lexer, stack);
+// }
+
 // function parseExpression(lexer: Lexer): Node {
 //   let token = lexer.peekToken();
 //   switch (token.type) {
@@ -51,103 +71,65 @@ function parseExpression(lexer: Lexer): Node {
 //   }
 // }
 
-function parseList(lexer: Lexer): Node {
-  const elements: Node[] = [];
+// function parseFunctionDeclaration(lexer: Lexer): Node {
+//   lexer.eatToken('ident', 'fun');
+//   const funcname = lexer.eatToken('ident').value;
+//   let params: Node[] = [];
+//   while(true) {
+//     const token = lexer.eatToken();
+//     if (token.value === ')') break;
+//     if (token.type !== 'ident') lexer.error("Expected parameter identifier");
+//     params.push(ident(token.value));
+//     // TODO: opt type, e.g. 'float' in 'foo(x float)'
+//   }
+//   const t = lexer.eatTokenIfType('op', ':');
+//   const rtype = (t) ? lexer.eatToken().value : null; // consume optional return type
+//   const body = sexprParseList(lexer);
+//   return def(funcname, func(params, body, rtype), rtype);
+// }
 
-  while (true) {
-    const token = lexer.peekToken();
-    if (!token || token.value === ')') {
-      lexer.eatToken(); // Consume the closing ')'
-      break;
-    }
-    if (token.value === '(') {
-      lexer.eatToken(); // Consume the opening '('
-      elements.push(parseList(lexer)); // Recursively parse the nested list
-    } else {
-      elements.push(parseAtom(lexer)); // Parse an atom
-    }
-  }
-
-  const listNode = list();
-  listNode.children = elements;
-  return listNode;
+function parseExpr(lexer: Lexer): Node {
+  return sexprParse(lexer); // TODO
 }
 
-function parseFunctionDeclaration(lexer: Lexer): Node {
-  lexer.eatToken('ident', 'fun');
-  const funcname = lexer.eatToken('ident').value;
-  let params: Node[] = [];
-  while(true) {
-    const token = lexer.eatToken();
-    if (token.value === ')') break;
-    if (token.type !== 'ident') lexer.error("Expected parameter identifier");
-    params.push(ident(token.value));
-    // TODO: opt type, e.g. 'float' in 'foo(x float)'
-  }
-  const t = lexer.eatTokenIfType('op', ':');
-  const rtype = (t) ? lexer.eatToken().value : null; // consume optional return type
-  const body = parseList(lexer);
-  return def(funcname, func(params, body, rtype), rtype);
-}
-
-function parseOperation(lexer: Lexer): Node {
-  let operator = lexer.eatToken('op').value;
-  let operands = [parseAtom(lexer), parseAtom(lexer)]; // TODO: unary/ternary
-  return op(operator, operands);
-}
-
-function parseVariableDeclaration(lexer: Lexer): Node {
-  const varname = lexer.eatToken('ident').value;
-  const type = lexer.eatTokenIfType('ident')?.value; // e.g. "float"
-  lexer.eatToken('op', '=');
-  const value = parseExpression(lexer);
-  return def(varname, value, type);
-}
-
-function parseControl(lexer: Lexer): Node {
-  let type = lexer.eatToken().value; // e.g. 'if', 'while'
-  let condition = parseExpression(lexer); // parse condition
-  let body = parseList(lexer); // parse body
-  return ctrl(type, condition, body);
-}
-
-function parseSexpr(lexer: Lexer): Node {
-  if (lexer.peekToken().value === '(') {
-    lexer.eatToken('op', '(');
-    return parseSexprList(lexer); // TODO: check cases
+function parseOp(lexer: Lexer): Node {
+  let o = lexer.eatToken('op').value;
+  if (o == '-') {
+    return op('-', [parseExpr(lexer)]);
+  } else if (o == '+') {
+    return parseExpr(lexer);
+  } else if (o == '?') {
+    return op('?', [parseExpr(lexer), parseExpr(lexer), parseExpr(lexer)]);
   } else {
-    return parseAtom(lexer);
+    return op(o, [parseExpr(lexer), parseExpr(lexer)]);
   }
 }
 
-export function parseSexprList(lexer: Lexer): Node {
-  let x = list();
-  while(lexer.peekToken().type != 'eof') {
-    if (lexer.peekToken().value === ')' ) { lexer.eatToken('op', ')'); break; } // TODO: might accept extra ')' at eof..
-    x.children!.push( parseSexpr(lexer) );
-  }
-  return x;
-}
+// function parseVariableDeclaration(lexer: Lexer): Node {
+//   const varname = lexer.eatToken('ident').value;
+//   const type = lexer.eatTokenIfType('ident')?.value; // e.g. "float"
+//   lexer.eatToken('op', '=');
+//   const value = parseExpression(lexer);
+//   return def(varname, value, type);
+// }
 
-export function parseStmt(lexer: Lexer): Node | undefined {
-  const t = lexer.peekToken();
-  if (t.type == 'ident') {
-    // TODO: the usual recursive descent
-    // let sexpr = parse(lexer);
-    // list = addchild(list, sexpr);
-  }
-  return undefined;
+// function parseControl(lexer: Lexer): Node {
+//   let type = lexer.eatToken().value; // e.g. 'if', 'while'
+//   let condition = parseExpression(lexer); // parse condition
+//   let body = parseList(lexer); // parse body
+//   return ctrl(type, condition, body);
+// }
+
+export function parseStmt(lexer: Lexer): Node {
+  return numlit('42', 42); // TODO:
 }
 
 export function parseModule(lexer: Lexer): Node {
-  let x = list();
-  let t;
-  while(t = lexer.peekToken()) {
-    if (lexer.lang == 'nih-sexpr') {
-      return parseSexprList(lexer); // TODO: should be able to switch back as well!
-    } else {
-      x = addChild(x, parseStmt(lexer));
-    }
+  if (lexer.lang == 'nih-sexpr') return sexprParse(lexer); // TODO: allow the switching!
+  
+  let c: Node[] = [];
+  while(lexer.peekToken().type != 'eof') {
+    c.push(parseStmt(lexer));
   }
-  return x;
+  return module(c);
 }

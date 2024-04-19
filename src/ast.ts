@@ -1,32 +1,20 @@
 import { assert } from './util.js'; // TODO
 
-type NodeT = 'list'
-            | 'ident'
-            | 'strlit'
-            | 'numlit'
-            | 'call'
-            | 'func'
-            | 'op'
-            | 'ctrl'
-            | 'def'
-            | 'return';
-
 export interface Node {
-  type: NodeT;
-  str?: string; // name, value, op - anything that has a string representation
-  num?: number; // number value
+  type: string;
+  str?: string;
+  num?: number;
   children?: Node[];
-  rtype?: string; // optional AST type
+  rtype?: string; // AST node NIH typeclass
 }
-
-export function list()                                          : Node { return { type: 'list', children: [] } }
+export function module(c: Node[])                               : Node { return { type: 'module', children: c } }
+export function statements(c: Node[])                           : Node { return { type: 'do', children: c } }
 export function ident(s: string)                                : Node { return { type: 'ident', str: s } }
-export function strlit(str: string)                             : Node { return { type: 'strlit', str: str } }
-export function numlit(num: number)                             : Node { return { type: 'numlit', num: num } }
-export function call(s: string)                                 : Node { return { type: 'call', str: s } }
-export function op(o: string, s: Node[])                        : Node { return { type: 'op', str: o, children: s }; }
-export function ctrl(t: string, c: Node, b: Node)               : Node { return { type: 'ctrl', str: t, children: [c, b] } }
-export function returnstmt(expr: Node)                          : Node { return { type: 'return', children: [expr] } }
+export function strlit(str: string)                             : Node { return { type: 'lit', str: str, rtype: 'string' } }
+export function numlit(exact: string, num: number)              : Node { return { type: 'lit', str: exact, num: num, rtype: 'number' } }
+export function gen(id: string, args: Node[])                   : Node { return { type: 'op', str: id, children: args } }
+export function op(op: string, operands: Node[])                : Node { return { type: 'op', str: op, children: operands } }
+export function returns(expr: Node)                             : Node { return { type: 'return', children: [expr] } }
 export function func(p: Node[], b: Node, r: string | null)      : Node { return { type: 'func', children: [...p, b], rtype: r ?? undefined } }
 export function def(s: string, v: Node, r: string | null = null): Node { return { type: 'def', str: s, children: [v], rtype: r ?? undefined } }
 
