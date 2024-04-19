@@ -29,6 +29,7 @@ export function number(n: Node): number {
   assert(n.num != null, 'AST node has no number representation');
   return n.num!;
 }
+// TODO: change the naming to children
 export function foreach(n: Node, fun: (node: Node) => any) {
   assert(n.children != null, 'AST node has no children')
   return n.children!.map(fun);

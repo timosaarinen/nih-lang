@@ -125,7 +125,6 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log(editor.getValue());
     console.log(event);
     // TODO: compile and run, pass 'printchars' function to capture output
-    //compileAndRun(initialCode);
+    compileAndRun(initialCode);
   });
-  compileAndRun(initialCode);
 });
