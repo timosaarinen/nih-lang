@@ -18,12 +18,17 @@ document.body.appendChild(renderer.domElement);
 
 // Create a cube
 const geometry = new THREE.BoxGeometry();
-const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+const material = new THREE.MeshPhongMaterial({ });
 const cube = new THREE.Mesh(geometry, material);
 scene.add(cube);
 
+// Add directional light
+const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
+directionalLight.position.set(5, 3, 5);
+scene.add(directionalLight);
+
 // Set camera position
-camera.position.z = 5;
+camera.position.z = 1.2; //5;
 
 // Animation loop
 function animate() {

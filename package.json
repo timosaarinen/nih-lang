@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "index": "vite-node index.js",
-    "editor": "vite dev",
+    "editor": "vite",
     "http-serverr": "npx http-server",
     "start": "vite-node dist/nih.js example/hiihoo.nih",
     "build": "tsc",
