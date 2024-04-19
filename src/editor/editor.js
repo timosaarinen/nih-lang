@@ -120,11 +120,16 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   editor.onDidChangeModelContent((event) => {
-    console.log("****************** Code changed - Recompiling ***********************");
-    document.getElementById('output').textContent = '[Build #' + (numChanges++) + ']';
-    console.log(editor.getValue());
-    console.log(event);
+    console.log("**** Code changed - Recompiling ****");
+    const sourcecode = editor.getValue();
+
+    // TODO: capture compile errors and execution output, pass {config} to compileAndRun()
+    document.getElementById('output').textContent = '[Build #' + (numChanges++) + ']\n\n' + sourcecode;
+
+    //console.log(sourcecode);
+    //console.log(event);
     // TODO: compile and run, pass 'printchars' function to capture output
-    compileAndRun(initialCode);
+    compileAndRun(sourcecode);
   });
+  compileAndRun(editor.getValue()); // TODO: don't run before change?
 });

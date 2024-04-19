@@ -3,7 +3,8 @@ import { error } from './util';
 
 const prefixJs = `
 //<<<library code>>>
-function printStr(s) { console.log(s); }
+function printchars(s) { console.log(s); } // TODO: don't call console.log directly
+function printlf(s) { console.log(''); }
 //<<<user code>>>
 `;
 
@@ -36,6 +37,7 @@ function emit(n: Node): string {
     case 'op':
       switch (n.str) {
         case 'call':  return `${id(n)}(${foreachStartAt(n, 1, emit).join(', ')})`;
+        case 'let':   return ''; //return `const ${n.children![0].str!} = ${emit(n.children![1])}; )`;
         default:      error(`Unhandled op.. ${n.str}`); return '';
       }
     case 'return': // TODO: should be 'op'?

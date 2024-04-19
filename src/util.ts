@@ -19,6 +19,13 @@ export function debug(...args: any[]): any {
     typeof arg === 'object' ? JSON.stringify(arg) : String(arg)
   ).join(' ');
 
+  //console.log(message); // TODO: logging groups
+}
+export function debugp(...args: any[]): any { // TODO: logging groups
+  const message = args.map(arg => 
+    typeof arg === 'object' ? JSON.stringify(arg) : String(arg)
+  ).join(' ');
+
   console.log(message);
 }
 

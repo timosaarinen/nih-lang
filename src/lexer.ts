@@ -12,9 +12,12 @@ type TokenType =
 type Lang = 
   'nih' | 'nih-sexpr'
 
+const NO_RTYPE = ''; // TODO: null?
+
 type Token = {
   type: TokenType;
   value: string;
+  rtype: string; // NO_RTYPE = none
   posStartEnd: [number, number];
 };
 
@@ -34,19 +37,19 @@ export class Lexer {
 
   // Main tokenizer method, tokenize()
   private startNewline(index: number): number {
-    debug(this);
-    debug(this.lineStart);
+    //debug(this);
+    //debug(this.lineStart);
     this.lineStart.push(index);
     return index;
   }
-  private pushTokenOp(op: string, pos: number) { 
-    this.tokens.push({type: 'op', value: op, posStartEnd: [pos, pos]});
+  private pushTokenOp(op: string, rtype: string, pos: number) { 
+    this.tokens.push({type: 'op', value: op, rtype: rtype, posStartEnd: [pos, pos]});
   }
-  private pushTokenRange(type: TokenType, value: string, start: number, end: number) {
-    this.tokens.push({type: type, value, posStartEnd: [start, end]});
+  private pushTokenRange(type: TokenType, value: string, rtype: string, start: number, end: number) {
+    this.tokens.push({type: type, value, rtype: rtype, posStartEnd: [start, end]});
   }
   private eofToken(index: number): Token {
-    return {type: 'eof', value: 'EOF', posStartEnd: [index, index]};
+    return {type: 'eof', value: 'EOF', rtype: NO_RTYPE, posStartEnd: [index, index]};
   }
   private tokenize() {
     const src = this.source;
@@ -57,10 +60,15 @@ export class Lexer {
     //**** The main tokenizer loop ***************************************
     let index = 0;
     let lastindex = -1;
+    let prevtypeann = NO_RTYPE; // type annotation for the next token 
     while (index < src.length) {
       debug(`LEXER: index ${index}: ${src.substring(index, index+42)}`);
       if (index === lastindex) this.error('TODO: buggy lexer, looping in the main tokenizer loop');
       lastindex = index;
+
+      // clear type annotation, if any, for the next loop cycle
+      const typeann = prevtypeann;
+      prevtypeann = NO_RTYPE;
 
       const char = src[index];
       const nextchar = (index + 1) < src.length ? src[index+1] : '';
@@ -77,7 +85,7 @@ export class Lexer {
           index++;
         }
         const value = src.slice(start, index);
-        this.pushTokenRange('number', value, start, index);
+        this.pushTokenRange('number', value, typeann, start, index);
         continue;
       }
 
@@ -90,7 +98,7 @@ export class Lexer {
           index++;
         }
         const value = src.slice(start, index);
-        this.pushTokenRange('string', value, start - 1, index + 1);
+        this.pushTokenRange('string', value, typeann, start - 1, index + 1); // TODO: string type ann..?
         index++;
         continue;
       }
@@ -103,11 +111,20 @@ export class Lexer {
       }
       // TODO: block comments /* */ - nestable!
 
+      //---- Type annotations --------------------------------------------
+      if (char === ':') {
+        // attach the type to the next token
+        const [typename, _, end] = parseName(src, index+1);
+        prevtypeann = typename;
+        index = end;
+        continue;
+      }
+
       //---- Operators ---------------------------------------------------
       let opdesc = matchOperator(src, index);
       if (opdesc) {
         debug(`-> operator ${opdesc.str}`);
-        this.pushTokenOp(opdesc.str, index);
+        this.pushTokenOp(opdesc.str, typeann, index);
         index = opdesc.end;
         continue;
       }
@@ -130,7 +147,7 @@ export class Lexer {
       if (isLetter(char)) {
         debug('-> identifier');
         const [name, start, end] = parseName(src, index);
-        this.pushTokenRange(isKeyword(name) ? 'keyword' : 'ident', name, start, end);
+        this.pushTokenRange(isKeyword(name) ? 'keyword' : 'ident', name, typeann, start, end);
         index = end+1;
         continue;
       }
@@ -158,7 +175,7 @@ export class Lexer {
     if (this.current < this.tokens.length) {
       let t = this.tokens[this.current++];
       if (expectedValue && t.value !== expectedValue) this.error(`Expected ${expectedValue}, got ${t.value}`, t);
-      if (expectedType && t.type != expectedType) this.error(`Expected token of type ${expectedType}, got ${t}`, t);
+      if (expectedType && t.type != expectedType) this.error(`Expected token of type ${expectedType}, got ${t.type}`, t);
       return t;
     } else {
       this.error("Unexpected end-of-file after", this.tokens[this.current - 1]);
@@ -239,15 +256,12 @@ export class Lexer {
     console.log(`ERROR:${this.filename}:${this.line(this.current)}:${this.column(this.current)}: ${err}:`);
     console.log(stripNewlines(errorLine));
     console.log(highlightLine);
-  
+
     throw new Error("Compilation failed.");
   }
 
   public error(err: string, token?: Token): never {
-    if(token) {
-      this.errorLine(err, token.posStartEnd[0], token.posStartEnd[1]);
-    } else {
-      this.errorLine(err, this.current, this.current);
-    }
+    if(!token) token = this.tokens[this.current];
+    this.errorLine(err, token.posStartEnd[0], token.posStartEnd[1]);
   }
 }
