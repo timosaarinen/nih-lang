@@ -1,8 +1,41 @@
 import * as THREE from 'three';
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
 
-const initialCode = `// Start typing your code here
-print 'Hello, world!'`;
+const initialCode = 
+`#lang = nih-sexpr
+(let WIDTH 16)
+(let HEIGHT 16)
+
+(fun :int mandelbrot (:float cx :float cy)
+  (doc "@returns # of iterations (0 if not in Mandelbrot set)")
+  (let maxiters 80)
+  (set! zx 0)
+  (set! zy 0)
+  (set! n 0)
+  (do-while (
+    (let px (- (^ zx 2) (^ zy 2)))
+    (let py (- (* 2 zx zy)))
+    (set! zx (+ px cx))
+    (set! zy (+ py cy))
+    (let d (sqrt (+ (^ zx 2) (^ zy 2))))
+    (inc! n)
+    (if (> d 2) (return 0.0))
+  ) (< n maxiters))
+  (return n))
+
+(let rs -2.0)
+(let re 1.0)
+(let is -1.0)
+(let ie 1.0)
+
+(for-lt i 0 WIDTH
+  (for-lt j 0 HEIGHT
+    (let cx (+ rs (* (/ i :float WIDTH) (- re rs))))
+    (let cy (+ is (* (/ j :float HEIGHT) (- ie is))))
+    (let m (call mandelbrot cx cy))
+    (call printchars (? (> m 0.0) '*' ' '))
+    (call printlf)))
+`;
 
 //------------------------------------------------------------------------
 // Scene setup
@@ -69,12 +102,25 @@ const onchange = () => {
 
 document.addEventListener('DOMContentLoaded', function() {
 
+  monaco.editor.defineTheme('nih', {
+    base: 'hc-black',
+    inherit: true,
+    rules: [
+        { token: 'comment', foreground: 'ffffff', fontStyle: 'italic underline' },
+        { token: 'comment.js', foreground: '00A000', fontStyle: 'bold' },
+        { token: 'comment.css', foreground: '0000ff' }
+    ],
+    colors: {
+        'editor.foreground': '#00ff00',
+        'editor.background': '#10101080',
+  }});
+
   monaco.editor.create(getEditorElement(), {
     value: initialCode,
-    language: 'nih', // TODO:
-    theme: 'vs-dark',
+    language: 'nih!', // TODO:
+    theme: 'nih',
     minimap: {
-      enabled: true,
+      enabled: false, //true,
     },
   });
 
