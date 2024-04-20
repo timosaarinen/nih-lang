@@ -7,7 +7,7 @@ import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
 //------------------------------------------------------------------------
 const initialCode = 
 `
-# Mandelbrot with Nih-sexpr syntax
+# _Mandelbrot_ with *Nih-sexpr* syntax
 #lang = nih-sexpr
 (let WIDTH 16)
 (let HEIGHT 16)
@@ -42,7 +42,7 @@ const initialCode =
     (call printchars (? (> m 0.0) '*' ' '))
     (call printlf)))
 
-# And the same in C-family syntax, **Nih-C**
+# And the same in _C-family_ syntax, *Nih-C*
 
 #lang = nih-c
 // Mandelbrot set with console output
@@ -159,9 +159,9 @@ function setmd(e, md) {
   let s = md;
   s = s.replace(/^# (.*?)(\n|$)/gm, '<h1>$1</h1>\n'); // # Header1 -> <h1>..</h1>
   s = s.replace(/^## (.*?)(\n|$)/gm, '<h2>$1</h2>\n'); // ## Header2 -> <h2>..</h2>
-  s = s.replace(/\n/g, '<br>'); // newlines
-  s = s.replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>'); // **bold** -> <b>bold</b>
-  s = s.replace(/\*([^*]+)\*/g, '<i>$1</i>'); // *italic* -> <i>italic</i>
+  s = s.replace(/\n/g, '<br>'); // newlines 
+  s = s.replace(/\_([^_]+)\_/g, '<i>$1</i>'); // _italic_ -> <i>italic</i>
+  s = s.replace(/\*([^*]+)\*/g, '<b>$1</b>'); // *bold* -> <b>bold</b>
   s = s.replace(/(\w)\^(\w+)/g, '$1<sup>$2</sup>'); // Convert superscript x^2 -> x<sup>2</sup>
   s = s.replace(/ {2,}/g, match => '&nbsp;'.repeat(match.length)); // 2+ spaces
   e.innerHTML = s;
