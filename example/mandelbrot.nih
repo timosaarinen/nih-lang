@@ -1,4 +1,5 @@
-// Mandelbrot set with simple console output ('*' or space)
+#lang = nih-c 
+# Mandelbrot set with console output
 WIDTH = 16
 HEIGHT = 16
 
