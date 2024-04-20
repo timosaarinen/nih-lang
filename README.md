@@ -9,7 +9,7 @@
 - 2D/3D rendering allows inline math equations, graphs, images and other non-text elements into code view (..maybe not audio.. maybe..)
 - 3D scenes and image shaders can run behind the code view or in own viewport, or on own monitor, or own VR headset
 - Programmatical interactive elements in code documentation, inlined with code (literal programming as one inspiration)
-- Trying to avoid the biggest mistake in GUIs where coders are concerned: GUIs are great for discoverability and visualization, but mouse input is *slow* versus keyboard for those that hit the keyboard every day with all the 10 fingers -> in WIDE, almost everything will be controllable with a keyboard and text input, in addition to keeping the GUI option for discoverability
+- Avoiding the biggest mistake in GUIs that concerns coders: GUIs are great for discoverability and visualization, but mouse input is *slow* versus keyboard for those that hit the keyboard every day with all the 10 fingers -> in WIDE, almost everything will be controllable with a keyboard and text input, in addition to keeping the GUI option for discoverability
 
 ## General Features
 - "Batteries included" vision - package manager and build/test/lint/autoformat/CI/CD integrated into the language itself, controlled by config.nih in the project root
@@ -29,6 +29,89 @@
 ## Type declarations for external not-NIH APIs 
 - Auto-generation of type declarations from C and TS libraries (C++.. maybe, this is heavily opionated language after all)
 - AI-assisted auto-generation of type declarations from JS libraries by running JS interpreter - and also inputting JS library documentation, if available
+
+# Syntax
+
+While syntax in a PLD sense is not the most important concern, the syntax does relate to the daily life of a programmer - NIH aims to keep the syntax as simple as possible, but not simpler.
+
+The same program in Nih-C and S-expression syntax:
+
+```
+// Mandelbrot set with console output
+WIDTH = 16
+HEIGHT = 16
+
+:float mandelbrot(:float cx, :float cy)
+  // @returns # of iterations (0 if not in Mandelbrot set)
+  maxiters = 80
+  zx := 0
+  zy := 0
+  n := 0
+  do:
+    px = zx^2 - zy^2
+    py = 2 * zx * zy
+    zx := px + cx
+    zy := py + cy
+    d = sqrt(zx^2 + zy^2)
+    n++
+    if d > 2 return 0 // if not in Mandelbrot set, early return
+  while n < maxiters
+  return n
+
+//------------------------------------------------------------------------
+rs = -2.0
+re = 1.0
+is = -1.0
+e = 1.0
+
+for i = 0..WIDTH
+  for j = 0..HEIGHT
+    cx = rs + :float i / WIDTH * (re - rs)
+    cy = is + :float j / HEIGHT * (ie - is)
+    m = mandelbrot(cx, cy)
+    printchars(m > 0.0 ? '*' : ' ')
+  printlf()
+```
+
+Unlike C, newline acts as a terminator ';' and {} are replaced with meaningful-indentation. Nih compiler does not allow TABs in the source code, unless inside quotes.
+
+..and in more mainstream C-family syntax:
+
+```
+#lang = nih-sexpr
+(let WIDTH 16)
+(let HEIGHT 16)
+
+(:int fun mandelbrot (:float cx :float cy)
+  (doc "@returns # of iterations (0 if not in Mandelbrot set)")
+  (let maxiters 80)
+  (set! zx 0)
+  (set! zy 0)
+  (set! n 0)
+  (do-while (
+    (let px (- (^ zx 2) (^ zy 2)))
+    (let py (- (* 2 zx zy)))
+    (set! zx (+ px cx))
+    (set! zy (+ py cy))
+    (let d (sqrt (+ (^ zx 2) (^ zy 2))))
+    (inc! n)
+    (if (> d 2) (return 0.0))
+  ) (< n maxiters))
+  (return n))
+
+(let rs -2.0)
+(let re 1.0)
+(let is -1.0)
+(let ie 1.0)
+
+(for-lt i 0 WIDTH
+  (for-lt j 0 HEIGHT
+    (let cx (+ rs (* (/ i :float WIDTH) (- re rs))))
+    (let cy (+ is (* (/ j :float HEIGHT) (- ie is))))
+    (let m (call mandelbrot cx cy))
+    (call printchars (? (> m 0.0) '*' ' '))
+    (call printlf)))
+```
 
 ## Inspirations (and Selective Not-Inspirations)
 
