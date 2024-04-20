@@ -1,3 +1,5 @@
+[![NIH Web IDE Prototyping](https://img.youtube.com/vi/uA5v16mtczs/0.jpg)](https://youtu.be/uA5v16mtczs)
+
 # NIH - KISS programming language
 
 - A next-generation pragmatic programming language inspired by the subjective best of all the programming languages since Plankalkül
