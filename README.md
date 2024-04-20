@@ -1,15 +1,34 @@
-# NIH - a KISS programming language
+# NIH - KISS programming language
 
 - A next-generation pragmatic programming language inspired by the subjective best of all the programming languages since Plankalkül
 - Made for daily work where you should have *fun* (most of time, at least..)
-- Web IDE (WIDE) is the intended daily development platform, but traditional ```$ nih main.nih``` way is also supported
-- 2D/3D rendering allows to inline math equations, images and other non-text elements into code view - and yes, even in VR environment
-- Trying to avoid the biggest mistake in GUIs, when coders are concerned: GUIs are great for discoverability and visualization, but mouse input is *slow* versus keyboard for those that hit the keyboard every day with all the 10 fingers -> even in WIDE, almost everything will be controllable with a keyboard and text input (in addition to keeping the GUI option for discoverability)
+- KISS as the main development rule - and compared to DRY/YAGNI & co, the only non-subjective and non-context-dependant one
+
+## Web IDE (WIDE) Vision
+- NIH Web IDE as the daily development platform, in addition to traditional ```$ nih main.nih``` way
+- 2D/3D rendering allows inline math equations, graphs, images and other non-text elements into code view (..maybe not audio.. maybe..)
+- 3D scenes and image shaders can run behind the code view or in own viewport, or on own monitor, or own VR headset
+- Programmatical interactive elements in code documentation, inlined with code (literal programming as one inspiration)
+- Trying to avoid the biggest mistake in GUIs where coders are concerned: GUIs are great for discoverability and visualization, but mouse input is *slow* versus keyboard for those that hit the keyboard every day with all the 10 fingers -> in WIDE, almost everything will be controllable with a keyboard and text input, in addition to keeping the GUI option for discoverability
+
+## General Features
+- "Batteries included" vision - package manager and build/test/lint/autoformat/CI/CD integrated into the language itself, controlled by config.nih in the project root
 - The source is still text, not obscure undiffable binary formats
-- Persistence with structured S-expression code - tabs and spaces are not stored unless quoted - "Ends the Tabs vs Spaces religious war once and for all".
-- "Batteries included" vision - package manager and build/test/lint/autoformat/CI/CD integrated into the language itself.
+- Source code can be in two syntaxes: Nih-Sexpr, which is the main persistance format for WIDE, and Nih-C, which is for *most part* faster to write and read
+- The Lisp-family & C-family syntax can be mixed in the same source code module with a lang #pragma
+- Automatic code formatting naturally with S-expressions, WIDE doesn't store tabs and unnecessary spaces unless in literal strings, same with ```$ nih --output-sexpr source.nih``` 
+- "Ends the Tabs vs Spaces religious war once and for all".. goal
 - Benevolent dictatorship in language design, as determined by the author. Sorry, committees not allowed. Ever. Maybe. Strong Maybe.
 - Open-source, MIT license - "Monetizing a programming language directly is a folly".
+
+## Documentation Vision
+- Automatic documentation generation from code is supported by base NIH compiler
+- Same syntax as inline math equations, links, images, 3D object refs, ...  - WYSIWYG
+- Code completion for all imported NIH libraries, but also for external JS/C APIs if type declarations are provided for them
+
+## Type declarations for external not-NIH APIs 
+- Auto-generation of type declarations from C and TS libraries (C++.. maybe, this is heavily opionated language after all)
+- AI-assisted auto-generation of type declarations from JS libraries by running JS interpreter - and also inputting JS library documentation, if available
 
 ## Inspirations (and Selective Not-Inspirations)
 
