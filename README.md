@@ -81,7 +81,7 @@ HEIGHT = 16
 rs = -2.0
 re = 1.0
 is = -1.0
-e = 1.0
+ie = 1.0
 
 for i = 0..WIDTH
   for j = 0..HEIGHT
@@ -175,22 +175,30 @@ Lua-style simplicity, one-liner scripts work (automatically main module). No par
 print 'Hiihoo'
 ~~~
 ~~~
-print 'The answer to life, universe is...' (6*7)
+print 'The answer to life, universe is... ' (6 * 7)
 ~~~
-You can use parens, but not the default. Necessary when ambiguous otherwise. " or ', you decide. No backtick '`'.
+You can use parens, but not the default. Necessary when ambiguous otherwise. Single or double-quote, you decide. No backtick '`'.
 ~~~
-print("The answer to life, universe =", 6*7)
+print("The answer to life, universe = ", 6 * 7)
 ~~~
 
 ### String interpolation
 ~~~
-print 'Hey $yourname, the answer to life, universe and everything is.. $(6*7).'
-s = fmt 'Hey $yourname, the answer to life, universe and everything is.. $(6*7).'
+print 'Hey $yourname, the answer to life, universe and everything is.. $(6 * 7).'
+s = fmt 'Hey $yourname, the answer to life, universe and everything is.. $(6 * 7).'
+~~~
+
+### Multi-line strings (automatically from the block, leading/trailing spaces not stored, \n are)
+~~~
+nethack-putka:
+  ######
+  #.$..|
+  ######
 ~~~
 
 ### Variables
 
-Pure functions and immutable values should always be the first option over mutability. No need for 'const' keyword below, as both 'foo' and 'bar' are immutable values by default. NIH also uses type inference - which makes code shorter and more readable in trivial unambiguous cases (still a good idea to specify types in an API for clarity, for example, even if not strictly required).
+Pure functions and immutable values should always be the first option over mutability. No need for 'const' keyword below, as both 'foo' and 'bar' are immutable values by default. NIH also uses type inference - which makes code shorter, easier to write and more readable in trivial unambiguous cases. It is still a good idea to specify types in an API for clarity, for example, even if not strictly required.
 ~~~
 foo = 100               // type inferred -> integer
 bar = 123.0             // type inferred -> float (maintains original representation, if possible - if assigned to a 'f64' for example)
@@ -198,7 +206,7 @@ barf = 123.0f           // C-style explicit float syntax supported -> 'f32'
 x = :float 123 / 2      // casting with constructor syntax
 v = :vec3 1.5 0.5 42.7  // GLSL-style native 3D vectors
 mypi = :f16 3.141592    // constructor syntax
-:f16 mypi = 3.141592    // not preferred way: type-for-variable, the above does the same
+:f16 mypi = 3.141592    // type-for-variable, the above does the same
 ~~~
 
 Mutable variables with ':='
@@ -225,41 +233,29 @@ fun :int answer() = 42  // not preferred way: ..and above is also the better way
 fun double(x) = 2x      // math-style factors/multipliers without '*', not usable with multi-character variable names
 double = (x) => 2x      // lambda (note: this is what above compiles to, see s-expr - up to programmer discretion which to use)
 
-fun foo(x)
-  x *= 2
-  return 10 + x
+fun hmmm(x)
+  y = sqrt(x)
+  z = x * x
+  return z / x 
 
-fun double(x) u64:
+:u64 double(:u64 x)
   return 2 * x
 
 :f32 dot(:vec3 a, :vec3 b)  // as an example, dot() is actually a native function
   return a.x * b.x + a.y * b.y + a.z * b.z
 
-fun fact(:int n)
+fun fact(:uint n)
   if n == 0 return 1
   n * fact(n - 1)  // return can be omitted on the last expression
-~~~
 
-### Multi-line strings (automatically from the block, leading/trailing spaces not stored, \n are)
-~~~
-nethack-putka:
-  ######
-  #.$..|
-  ######
+fact = (x) => (n == 0) ? 1 : n * fact(n - 1)
 ~~~
 
 # Getting Started
 TODO: still heavily work-in-progress, wander around the source if you are adventurous
 
 # Development notes
-- install ESLint and Prettier extensions for Visual Studio Code
-
-# Roadmap
--> GLSL backend (one the goals of NIH is to share library code between CPU and GPU code)
--> Web live coding editor
--> Integrated linter
--> Integrated code formatter (if required for 'textual NIH' source code? For S-expressions no need)
--> WebAssembly backend
+- install ESLint extensions for Visual Studio Code
 
 # Contributing
 Thrilled that you're interested in contributing to NIH! This project thrives on community feedback and the diverse perspectives of programmers like you.
