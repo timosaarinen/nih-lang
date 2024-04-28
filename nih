@@ -1,2 +1,3 @@
 #/bin/bash
-npx vite-node dist/nih.js "$@"
+# TODO: check that 'nih' has been deployed. Auto-build&deploy-latest?
+npx vite-node ~/nih-1.0.0/nih.js "$@"
