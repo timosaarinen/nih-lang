@@ -26,8 +26,8 @@
 
 (forlt i 0 WIDTH
   (forlt j 0 HEIGHT
-    (let cx (+ rs (* (/ i :float WIDTH) (- re rs))))
-    (let cy (+ is (* (/ j :float HEIGHT) (- ie is))))
+    (let cx (+ rs (* (/ i (cast WIDTH :float)) (- re rs))))
+    (let cy (+ is (* (/ j (cast HEIGHT :float)) (- ie is))))
     (let m (call mandelbrot cx cy))
     (call printchars (? (> m 0.0) '*' ' '))
     (call printlf)))

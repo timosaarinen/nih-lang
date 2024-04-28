@@ -1,10 +1,11 @@
-import { debug, isDigit, isLetter, parseName, skipToNextLine, stripNewlines, strmatch } from './util';
+import { debug, isDigit, isLetter, parseName, nextLineStart, strToEndOfLine, stripNewlines, strmatch } from './util';
 import { isKeyword, matchKeyword, matchOperator } from './langdef';
 
 type TokenType =
   'eof' |     // Code stream ended
   'keyword' | // NIH language keyword, e.g. 'fun', 'for'..
   'ident' |   // identifier, name in value, e.g. 'foobar'
+  'type' |    // type annotation, e.g. ':int' -> 'int'
   'string' |  // literal string, content in value, e.g. "Hello, World!"
   'number' |  // number literal, string representation in value e.g. '42' or '3.141592'
   'op';       // all one or two character operators - in value e.g. '+', '-', '?', '(', '&&'
@@ -60,15 +61,10 @@ export class Lexer {
     //**** The main tokenizer loop ***************************************
     let index = 0;
     let lastindex = -1;
-    let prevtypeann = NO_RTYPE; // type annotation for the next token 
     while (index < src.length) {
       debug(`LEXER: index ${index}: ${src.substring(index, index+42)}`);
       if (index === lastindex) this.error('TODO: buggy lexer, looping in the main tokenizer loop');
       lastindex = index;
-
-      // clear type annotation, if any, for the next loop cycle
-      const typeann = prevtypeann;
-      prevtypeann = NO_RTYPE;
 
       const char = src[index];
       const nextchar = (index + 1) < src.length ? src[index+1] : '';
@@ -85,7 +81,7 @@ export class Lexer {
           index++;
         }
         const value = src.slice(start, index);
-        this.pushTokenRange('number', value, typeann, start, index);
+        this.pushTokenRange('number', value, NO_RTYPE, start, index);
         continue;
       }
 
@@ -98,7 +94,7 @@ export class Lexer {
           index++;
         }
         const value = src.slice(start, index);
-        this.pushTokenRange('string', value, typeann, start - 1, index + 1); // TODO: string type ann..?
+        this.pushTokenRange('string', value, NO_RTYPE, start - 1, index + 1); // TODO: string type ann..?
         index++;
         continue;
       }
@@ -106,16 +102,16 @@ export class Lexer {
       //---- Comments ----------------------------------------------------
       if ((char === '/' && nextchar === '/') || (char === '#' && /\s/.test(nextchar))) {
         debug('-> line comment');
-        index = this.startNewline(skipToNextLine(src, index));
+        index = this.startNewline(nextLineStart(src, index));
         continue;
       }
       // TODO: block comments /* */ - nestable!
 
       //---- Type annotations --------------------------------------------
       if (char === ':') {
-        // attach the type to the next token
         const [typename, _, end] = parseName(src, index+1);
-        prevtypeann = typename;
+        debug(`-> type ${typename}`);
+        this.pushTokenRange('type', typename, /*rtype*/ typename, index, end);
         index = end;
         continue;
       }
@@ -124,7 +120,7 @@ export class Lexer {
       let opdesc = matchOperator(src, index);
       if (opdesc) {
         debug(`-> operator ${opdesc.str}`);
-        this.pushTokenOp(opdesc.str, typeann, index);
+        this.pushTokenOp(opdesc.str, NO_RTYPE, index);
         index = opdesc.end;
         continue;
       }
@@ -138,17 +134,22 @@ export class Lexer {
 
       //---- #pragma -----------------------------------------------------
       if (char == '#') {
-        debug('-> pragma');
-        let end: number | null;
-        if (end = strmatch('#lang = nih-sexpr', src, index)) { this.lang = 'nih-sexpr'; index = end; debug('** S-EXPRESSION MODE ENGAGED **'); continue; }
+        debug('#pragma: ', strToEndOfLine(src, index));
+        index = this.startNewline(nextLineStart(src, index));
+        
+        // NOTE: every statement is an S-expression, if it starts with paren. No need for pragma:
+        //    let end: number | null; 
+        //    if (end = strmatch('#lang = nih-sexpr', src, index)) {
+        //          this.lang = 'nih-sexpr'; index = end; debug('** S-EXPRESSION MODE ENGAGED **'); continue; 
+        //    }
       }
 
       //---- Identifiers -------------------------------------------------
       if (isLetter(char)) {
         debug('-> identifier');
         const [name, start, end] = parseName(src, index);
-        this.pushTokenRange(isKeyword(name) ? 'keyword' : 'ident', name, typeann, start, end);
-        index = end+1;
+        this.pushTokenRange(isKeyword(name) ? 'keyword' : 'ident', name, NO_RTYPE, start, end);
+        index = end + 1;
         continue;
       }
     
@@ -254,7 +255,7 @@ export class Lexer {
 
     console.log("*************************** NIH! *****************************************");
     console.log(`ERROR:${this.filename}:${this.line(this.current)}:${this.column(this.current)}: ${err}:`);
-    console.log(stripNewlines(errorLine));
+    console.log(errorLine); //console.log(stripNewlines(errorLine));
     console.log(highlightLine);
 
     throw new Error("Compilation failed.");

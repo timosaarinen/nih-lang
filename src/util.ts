@@ -40,15 +40,21 @@ export function strmatch(target: string, source: string, startIndex: number): nu
 }
 
 export function stripNewlines(str: string): string {
-  return str.replace(/\r?\n|\r/g, "");
+  throw new Error("TODO: stripNewLines"); //return str.replace(/\r?\n|\r/g, "");
 }
 
-export function skipToNextLine(str: string, index: number): number {
-  while(str[index++] !== '\n') {
+export function nextLineStart(str: string, index: number): number {
+  while(str[index++] !== '\n' && str[index++] !== '\r') {
     if (index >= str.length) return str.length; // eof
   }
-  if (str[index] === '\r') index++;
+  if (str[index] === '\n' || str[index] === '\r') index++;
   return index;
+}
+
+export function strToEndOfLine(str: string, index: number) {
+  const end = nextLineStart(str, index);
+  while (str[index] == '\r' || str[index] == '\n') index--;
+  return str.substring(index, end);
 }
 
 export function parseName(src: string, index: number): [string, number, number] {

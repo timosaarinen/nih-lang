@@ -1,5 +1,3 @@
 #!/usr/bin/env nih
-#lang=nih-ast
-
 (call print 'Hiihoo')
 (call print 'The answer to life, universe and everything is $(6*7).')
