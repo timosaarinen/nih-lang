@@ -1,86 +1,24 @@
-import { compileAndRun } from '../../src/nihlib'
+import { compileAndRun } from '../../src/nihlib' // TODO: ../nihlib.js?
 import * as THREE from 'three';
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
 
-//------------------------------------------------------------------------
-//  Example code (TODO: fetch with HTTPS to keep up-to-date?)
-//------------------------------------------------------------------------
-const initialCode = 
-`
-# _Mandelbrot_ with *Nih-sexpr* syntax
-#lang = nih-sexpr
-(let WIDTH 16)
-(let HEIGHT 16)
+import initialCode from '../../example/mandelbrot0.nih?raw'
+//import { initialCodeC } from '../../example/mandelbrot.nih'
 
-(:int fun mandelbrot (:float cx :float cy)
-  (doc "@returns # of iterations (0 if not in Mandelbrot set)")
-  (let maxiters 80)
-  (set! zx 0)
-  (set! zy 0)
-  (set! n 0)
-  (do-while (
-    (let px (- (^ zx 2) (^ zy 2)))
-    (let py (- (* 2 zx zy)))
-    (set! zx (+ px cx))
-    (set! zy (+ py cy))
-    (let d (sqrt (+ (^ zx 2) (^ zy 2))))
-    (inc! n)
-    (if (> d 2) (return 0.0))
-  ) (< n maxiters))
-  (return n))
+/*
+let initialCode = 'nosexpr';
+let initialCodeC = 'noc';
 
-(let rs -2.0)
-(let re 1.0)
-(let is -1.0)
-(let ie 1.0)
+await fetch('/examples/mandelbrot0.nih')
+  .then(response => response.text())
+  .then(code => initialCode = code)
+  .catch(error => console.error('Error loading source file:', error));
 
-(for-lt i 0 WIDTH
-  (for-lt j 0 HEIGHT
-    (let cx (+ rs (* (/ i :float WIDTH) (- re rs))))
-    (let cy (+ is (* (/ j :float HEIGHT) (- ie is))))
-    (let m (call mandelbrot cx cy))
-    (call printchars (? (> m 0.0) '*' ' '))
-    (call printlf)))
-
-# And the same in _C-family_ syntax, *Nih-C*
-
-#lang = nih-c
-// Mandelbrot set with console output
-
-WIDTH = 16
-HEIGHT = 16
-
-:float mandelbrot(:float cx, :float cy)
-  // @returns # of iterations (0 if not in Mandelbrot set)
-  maxiters = 80
-  zx := 0
-  zy := 0
-  n := 0
-  do:
-    px = zx^2 - zy^2
-    py = 2 * zx * zy
-    zx := px + cx
-    zy := py + cy
-    d = sqrt(zx^2 + zy^2)
-    n++
-    if d > 2 return 0 // if not in Mandelbrot set, early return
-  while n < maxiters
-  return n
-
-//------------------------------------------------------------------------
-rs = -2.0
-re = 1.0
-is = -1.0
-e = 1.0
-
-for i = 0..WIDTH
-  for j = 0..HEIGHT
-    cx = rs + :float i / WIDTH * (re - rs)
-    cy = is + :float j / HEIGHT * (ie - is)
-    m = mandelbrot(cx, cy)
-    printchars(m > 0.0 ? '*' : ' ')
-  printlf()
-`;
+await fetch('/examples/mandelbrot.nih')
+  .then(response => response.text())
+  .then(code => initialCodeC = code)
+  .catch(error => console.error('Error loading source file:', error));
+*/
 
 //------------------------------------------------------------------------
 //  Util

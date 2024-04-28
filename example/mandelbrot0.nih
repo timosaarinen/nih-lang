@@ -17,7 +17,7 @@
     (inc! n)
     (if (> d 2) (return 0.0))
   ) (< n maxiters))
-  (return n))
+  (return n)))
 
 (let rs -2.0)
 (let re 1.0)

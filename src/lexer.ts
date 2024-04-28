@@ -69,11 +69,15 @@ export class Lexer {
       const char = src[index];
       const nextchar = (index + 1) < src.length ? src[index+1] : '';
 
-      //---- Newline -----------------------------------------------------
-      if (char === '\n') { debug('-> newline'); index = this.startNewline(index+1); continue; }
+      let opdesc = matchOperator(src, index); // TODO: inside if?
 
+      //---- Newline -----------------------------------------------------
+      if (char === '\n') { 
+        debug('-> newline'); 
+        index = this.startNewline(index+1); 
+      }
       //---- Number literals ---------------------------------------------
-      if (isDigit(char)) {
+      else if (isDigit(char)) {
         debug('-> number');
         let start = index;
         index++;
@@ -82,12 +86,10 @@ export class Lexer {
         }
         const value = src.slice(start, index);
         this.pushTokenRange('number', value, NO_RTYPE, start, index);
-        continue;
       }
-
       //---- String literals ---------------------------------------------
       // TODO: handle string interpolation in parser?
-      if ("'\"`".includes(char)) {
+      else if ("'\"`".includes(char)) {
         debug('-> string literal');
         let start = ++index;
         while (index < src.length && src[index] !== char) { 
@@ -96,74 +98,62 @@ export class Lexer {
         const value = src.slice(start, index);
         this.pushTokenRange('string', value, NO_RTYPE, start - 1, index + 1); // TODO: string type ann..?
         index++;
-        continue;
       }
-      
       //---- Comments ----------------------------------------------------
-      if ((char === '/' && nextchar === '/') || (char === '#' && /\s/.test(nextchar))) {
+      // TODO: nestable block comments /* */
+      else if ((char === '/' && nextchar === '/') || (char === '#' && /\s/.test(nextchar))) {
         debug('-> line comment');
         index = this.startNewline(nextLineStart(src, index));
-        continue;
       }
-      // TODO: block comments /* */ - nestable!
-
       //---- Type annotations --------------------------------------------
-      if (char === ':') {
+      else if (char === ':') {
         const [typename, _, end] = parseName(src, index+1);
         debug(`-> type ${typename}`);
         this.pushTokenRange('type', typename, /*rtype*/ typename, index, end);
         index = end;
-        continue;
       }
-
       //---- Operators ---------------------------------------------------
-      let opdesc = matchOperator(src, index);
-      if (opdesc) {
+      else if (opdesc) {
         debug(`-> operator ${opdesc.str}`);
         this.pushTokenOp(opdesc.str, NO_RTYPE, index);
         index = opdesc.end;
-        continue;
       }
-      
-      //---- Keywords ----------------------------------------------------
-      let kwdesc = matchKeyword(src, index);
-      if (kwdesc) {
-        debug(`-> keyword ${kwdesc.str}`);
-        // TODO: implement keywords
-      }
-
       //---- #pragma -----------------------------------------------------
-      if (char == '#') {
+      // NOTE: every statement is an S-expression, if it starts with paren. No need for pragma:
+      //    let end: number | null; 
+      //    if (end = strmatch('#lang = nih-sexpr', src, index)) {
+      //          this.lang = 'nih-sexpr'; 
+      //          index = end; 
+      //          debug('** S-EXPRESSION MODE ENGAGED **'); 
+      //    }
+      else if (char == '#') {
         debug('#pragma: ', strToEndOfLine(src, index));
         index = this.startNewline(nextLineStart(src, index));
-        
-        // NOTE: every statement is an S-expression, if it starts with paren. No need for pragma:
-        //    let end: number | null; 
-        //    if (end = strmatch('#lang = nih-sexpr', src, index)) {
-        //          this.lang = 'nih-sexpr'; index = end; debug('** S-EXPRESSION MODE ENGAGED **'); continue; 
-        //    }
       }
-
       //---- Identifiers -------------------------------------------------
-      if (isLetter(char)) {
-        debug('-> identifier');
-        const [name, start, end] = parseName(src, index);
-        this.pushTokenRange(isKeyword(name) ? 'keyword' : 'ident', name, NO_RTYPE, start, end);
-        index = end + 1;
-        continue;
+      else if (isLetter(char)) {
+        const kwdesc = matchKeyword(src, index); // TODO: remove, checking isLetter() first
+        if (kwdesc) {
+          debug('-> keyword');
+          this.pushTokenRange('keyword', kwdesc.str, NO_RTYPE, kwdesc.start, kwdesc.end);
+          index = kwdesc.end + 1;
+        } else {
+          debug('-> identifier');
+          const [name, start, end] = parseName(src, index);
+          this.pushTokenRange('ident', name, NO_RTYPE, start, end);
+          index = end + 1;
+        }
       }
-    
       //---- Whitespace --------------------------------------------------
       // NOTE: meaningful whitespace, so don't keep this as first (don't need to be last either, but.. good enough)
-      if (/\s/.test(char)) {
+      else if (/\s/.test(char)) {
         debug('-> whitespace');
         index++; 
-        continue; 
-      }
-
+      } 
       //---- If the execution went this far in the loop scope, it's time for....
-      debug('-> he went too far!');
-      this.errorLine('SYNTAX ERROR!', index, index+1);
+      else {
+        this.errorLine('SYNTAX ERROR! char: ' + src[index], index, index+1);
+      }
     }
   }
 
