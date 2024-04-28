@@ -33,16 +33,18 @@ const keywords = [
   'call', 'case', 'const', 'continue',
   'dec', 'default', 'doc', 'do', 
   'else', 'enum',
-  'for-each', 'for-lt', 'for', 'fun', 
+  'foreach', 'forlt', 'for', 'fn',
   'get',
-  'if', 'inc',
+  'if', 'inc!',
   'let',
   'pure',
   'return',
-  'set', 'struct', 'switch',
+  'set!', 'struct', 'switch',
   'type',
   'uniform',
   'while',
+  'plist',
+  'param',
 ];
 const keywordSet = new Set(keywords);
 //------------------------------------------------------------------------
