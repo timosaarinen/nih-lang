@@ -6,7 +6,7 @@
   "scripts": {
     "index": "vite-node index.js",
     "editor": "vite",
-    "http-serverr": "npx http-server",
+    "serve": "npx serve",
     "start": "vite-node dist/nih.js example/hiihoo.nih",
     "build": "tsc",
     "doeet": "tsc && ./test && vite-node dist/nih.js example/mandelbrot0.nih"
