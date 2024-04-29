@@ -1,8 +1,10 @@
-import { debugDump } from './ast';
-import { emitJs } from './emitjs';
+import { emitjs } from './emitjs';
 import { Lexer } from './lexer';
-import { readFileSync } from 'fs';
+import { readFileSync } from 'fs'; // node
 import { parseModule } from './parser';
+import { glog, glogenable } from './util';
+
+glogenable('verbose'); // uncomment to enable verbose mode
 
 //------------------------------------------------------------------------
 function loadSourceFromFile(filename: string): string {
@@ -16,23 +18,35 @@ function loadSourceFromFile(filename: string): string {
 
 //------------------------------------------------------------------------
 const filename = process.argv[2] // e.g. 'example/mandelbrot.nih' or 'example/hiihoo.nih.sexpr'
-console.log(`Reading source file: ${filename}`)
+glog('verbose', `Reading source file: ${filename}`)
 const sourcecode = loadSourceFromFile(filename)
 
-console.log("------------------------")
-console.log(sourcecode)
-console.log("------------------------")
+glog('verbose', "---- Source code >>------------------------------------------")
+glog('verbose', sourcecode)
+glog('verbose', "----<< Source code-------------------------------------------\n")
 
 let lexer = new Lexer(sourcecode, filename)
-lexer.debugDump()
-console.log("------------------------")
 
-let ast = parseModule(lexer)
-debugDump(ast)
-console.log("------------------------")
+glog('verbose', "---- Tokens >>-----------------------------------------------")
+for (let n=0; n < lexer.tokens.length; ++n) {
+  glog('verbose', JSON.stringify(lexer.tokens[n]));
+}
+glog('verbose', "----<< Tokens -----------------------------------------------\n")
 
-let jscode = emitJs(ast)
-console.log(jscode)
-console.log("------------------------")
+let ast = parseModule(lexer);
+
+glog('verbose', "---- Abstract Syntax Tree (AST) >>---------------------------")
+for (let n=0; n < lexer.tokens.length; ++n) {
+  glog('verbose', JSON.stringify(lexer.tokens[n]));
+}
+glog('verbose', "----<< Abstract Syntax Tree (AST) ---------------------------\n")
+
+let jscode = emitjs(ast)
+
+glog('verbose', "---- JS code >>----------------------------------------------\n")
+glog('verbose', jscode);
+glog('verbose', "----<< JS code ----------------------------------------------\n")
+
+glog('verbose', "---- Executing JS code >>------------------------------------\n")
 
 eval(jscode)

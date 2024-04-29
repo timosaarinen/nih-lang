@@ -1,27 +1,35 @@
-import { debug, isDigit, isLetter, parseName, nextLineStart, strToEndOfLine, stripNewlines, strmatch } from './util';
+import { log, isDigit, isLetter, parseName, nextLineStart, strToEndOfLine, stripNewlines, strmatch } from './util';
 import { isKeyword, matchKeyword, matchOperator } from './langdef';
 
-export type TokenType =
-  'eof'     | // Code stream ended
-  'keyword' | // NIH language keyword, e.g. 'fun', 'for'.. TODO: could combine with 'op', or make meta-heads all 'op' even if not short '+'
-  'ident'   | // identifier, name in value, e.g. 'foobar'
-  'type'    | // type annotation, e.g. ':int' -> 'int'
-  'strlit'  | // string literal, content in value, e.g. "Hello, World!"
-  'numlit'  | // number literal, string representation in value e.g. '42' or '3.141592'
-  'op';       // all one or two character operators - in value e.g. '+', '-', '?', '(', '&&'
+function debug(...args: any[]) { 
+  log('LEXER:', ...args); // DEBUG: uncomment to enable debug logging
+}
 
-const NO_RTYPE = ''; // no type annotation
+export type TokenClass =
+  | 'eof'     // Code stream end
+  | 'kw'      // .str, NIH language keywords and operators, e.g. 'let', 'fn', '+', '-', '?', '(', '&&'
+  | 'ident'   // .str, identifier, e.g. 'foobar'
+  | 'strlit'  // .str, string literal, e.g. "Hello, World!"
+  | 'numlit'  // .str, number literal, e.g. '42' or '3.141592'
+  | 'type'    // .str/.rtype, type annotation, e.g. ':int' -> 'int'
 
 type Token = {
-  type: TokenType; // TODO: tok? as in token class, could change rtype -> type?
-  value: string; // TODO: rename -> str?
-  rtype: string; // type annotation or NO_RTYPE
-  posStartEnd: [number, number];
+  cls: TokenClass;                // token class
+  str: string;                    // the string representation of token, 'let', 'foobar', 'Hello, world!', '3.14', '(', 'int'
+  posStartEnd: [number, number];  // src[start..end]
 };
 
+function pushtoken(tokens: Token[], cls: TokenClass, str: string, start: number, end: number) {
+  tokens.push({ cls: cls, str, posStartEnd: [start, end] });
+}
+function eoftoken(index: number): Token {
+  return { cls: 'eof', str: 'EOF', posStartEnd: [index, index] }
+}
+
+//------------------------------------------------------------------------
 export class Lexer {
+  public tokens: Token[] = [];
   private current: number = 0;
-  private tokens: Token[] = [];
   private source: string = "";
   private lineStart: number[] = new Array<number>(0); //[];
   private filename: string;
@@ -32,22 +40,12 @@ export class Lexer {
     this.tokenize();
   }
 
-  // Main tokenizer method, tokenize()
-  private startNewline(index: number): number {
-    //debug(this);
-    //debug(this.lineStart);
+  private startnewline(index: number): number {
     this.lineStart.push(index);
     return index;
   }
-  private pushTokenOp(op: string, rtype: string, pos: number) { 
-    this.tokens.push({type: 'op', value: op, rtype: rtype, posStartEnd: [pos, pos]});
-  }
-  private pushTokenRange(type: TokenType, value: string, rtype: string, start: number, end: number) {
-    this.tokens.push({type: type, value, rtype: rtype, posStartEnd: [start, end]});
-  }
-  private eofToken(index: number): Token {
-    return {type: 'eof', value: 'EOF', rtype: NO_RTYPE, posStartEnd: [index, index]};
-  }
+
+  // Main tokenizer method, tokenize()
   private tokenize() {
     const src = this.source;
     this.tokens = [];
@@ -58,7 +56,7 @@ export class Lexer {
     let index = 0;
     let lastindex = -1;
     while (index < src.length) {
-      debug(`LEXER: index ${index}: ${src.substring(index, index+42)}`);
+      debug(`index ${index}: ${src.substring(index, index+42)}`);
       if (index === lastindex) this.error('TODO: buggy lexer, looping in the main tokenizer loop');
       lastindex = index;
 
@@ -69,7 +67,7 @@ export class Lexer {
       //---- Newline -----------------------------------------------------
       if (char === '\n') { 
         debug('-> newline'); 
-        index = this.startNewline(index+1); 
+        index = this.startnewline(index+1); 
       }
       //---- Number literals ---------------------------------------------
       else if (isDigit(char)) {
@@ -80,7 +78,7 @@ export class Lexer {
           index++;
         }
         const value = src.slice(start, index);
-        this.pushTokenRange('number', value, NO_RTYPE, start, index);
+        pushtoken(this.tokens, 'numlit', value, start, index);
       }
       //---- String literals ---------------------------------------------
       // TODO: handle string interpolation in parser?
@@ -91,44 +89,44 @@ export class Lexer {
           index++;
         }
         const value = src.slice(start, index);
-        this.pushTokenRange('string', value, NO_RTYPE, start - 1, index + 1); // TODO: string type ann..?
+        pushtoken(this.tokens, 'strlit', value, start - 1, index + 1); 
         index++;
       }
       //---- Comments ----------------------------------------------------
       // TODO: nestable block comments /* */
       else if ((char === '/' && nextchar === '/') || (char === '#' && /\s/.test(nextchar))) {
         debug('-> line comment');
-        index = this.startNewline(nextLineStart(src, index));
+        index = this.startnewline(nextLineStart(src, index));
       }
       //---- Type annotations --------------------------------------------
       else if (char === ':') {
         const [typename, _, end] = parseName(src, index+1);
         debug(`-> type ${typename}`);
-        this.pushTokenRange('type', typename, /*rtype*/ typename, index, end);
+        pushtoken(this.tokens, 'type', typename, index, end);
         index = end;
       }
       //---- Operators ---------------------------------------------------
       else if (opdesc = matchOperator(src, index)) {
         debug(`-> operator ${opdesc.str}`);
-        this.pushTokenOp(opdesc.str, NO_RTYPE, index);
+        pushtoken(this.tokens, 'kw', opdesc.str, opdesc.start, opdesc.end);
         index = opdesc.end;
       }
       //---- #pragma -----------------------------------------------------
       else if (char == '#') {
         debug('#pragma: ', strToEndOfLine(src, index));
-        index = this.startNewline(nextLineStart(src, index));
+        index = this.startnewline(nextLineStart(src, index));
       }
       //---- Identifiers -------------------------------------------------
       else if (isLetter(char)) {
         const kwdesc = matchKeyword(src, index);
         if (kwdesc) {
           debug('-> keyword');
-          this.pushTokenRange('keyword', kwdesc.str, NO_RTYPE, kwdesc.start, kwdesc.end);
+          pushtoken(this.tokens, 'kw', kwdesc.str,kwdesc.start, kwdesc.end);
           index = kwdesc.end + 1;
         } else {
           debug('-> identifier');
           const [name, start, end] = parseName(src, index);
-          this.pushTokenRange('ident', name, NO_RTYPE, start, end);
+          pushtoken(this.tokens, 'ident', name, start, end);
           index = end + 1;
         }
       }
@@ -147,24 +145,23 @@ export class Lexer {
 
   public peekToken(lookahead: number = 0): Token {
     const position = this.current + lookahead;
-    return position < this.tokens.length ? this.tokens[position] : this.eofToken(this.current);
+    return position < this.tokens.length ? this.tokens[position] : eoftoken(this.current);
   }
-
-  public eatToken(expectedType?: TokenType, expectedValue? : string): Token {
+  public eatToken(expectedType?: TokenClass, expectedValue? : string): Token {
     if (this.current < this.tokens.length) {
       let t = this.tokens[this.current++];
-      if (expectedValue && t.value !== expectedValue) this.error(`Expected ${expectedValue}, got ${t.value}`, t);
-      if (expectedType && t.type != expectedType) this.error(`Expected token of type ${expectedType}, got ${t.type}`, t);
+      if (expectedValue && t.str !== expectedValue) this.error(`Expected ${expectedValue}, got ${t.str}`, t);
+      if (expectedType && t.cls != expectedType) this.error(`Expected token of type ${expectedType}, got ${t.str}`, t);
       return t;
     } else {
       this.error("Unexpected end-of-file after", this.tokens[this.current - 1]);
     }
   }
-  public eatTokenIfType(expectedType: TokenType, expectedValue? : string): Token | null {
+  public eatTokenIfType(expectedType: TokenClass, expectedValue? : string): Token | null {
     if (this.current < this.tokens.length) {
       let t = this.tokens[this.current];
-      if (t.type !== expectedType) return null;
-      if (expectedValue && t.value !== expectedValue) return null;
+      if (t.cls !== expectedType) return null;
+      if (expectedValue && t.str !== expectedValue) return null;
       this.current++;
       return t;
     } else {
@@ -172,7 +169,7 @@ export class Lexer {
     }
   }
 
-  public pos(): Number {
+  public pos(): number {
     return this.current;
   }
 

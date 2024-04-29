@@ -2,8 +2,6 @@ export const isLetter = (char: string) => /[a-zA-Z_]/.test(char);
 export const isDigit = (char: string) => /[0-9]/.test(char);
 
 //------------------------------------------------------------------------
-export let log_groups = new Map<string, boolean>();
-
 export function fmt(...args: any[]): any {
   return args.map(arg => typeof arg === 'object' ? JSON.stringify(arg) : String(arg)).join(' ');
 }
@@ -20,8 +18,11 @@ export function assert(shouldbetrue: boolean, msg?: string): any {
   return null;
 }
 
-export function debugenable(group: string, state: boolean = true) { log_groups.set(group, state); }
-export function debug(group: string, ...args: any[]): any         { if (log_groups.get(group)) console.log(fmt(args)); }
+// global log and grouped log (must be enabled)
+export let log_groups = new Map<string, boolean>();
+export function log(...args: any[]): any                          { console.log(...args); } // console.log(fmt(args));
+export function glog(group: string, ...args: any[]): any          { if (log_groups.get(group)) console.log(...args); } // console.log(fmt(args));
+export function glogenable(group: string, state: boolean = true)  { log_groups.set(group, state); }
 
 // Match source (code) string at given index to the target string (which can contain spaces).
 // @returns null if not match or the index after the string (at next character)
