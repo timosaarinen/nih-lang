@@ -1,62 +1,95 @@
-import { Lexer } from './lexer';
-import { Node, ident, module, numlit, strlit, op, gen, def } from './ast';
-import { assert, debugp } from './util';
+import { Lexer, TokenType } from './lexer';
+import { Ast, AstT } from './ast';
+import { assert, debug, debugenable, error } from './util';
+
+debugenable('parser'); // DEBUG: uncomment to enable parser debug info logging
 
 //------------------------------------------------------------------------
-function sexprParseAtom(lexer: Lexer): Node {
+//
+//  S-Expressions
+//    - represent AST Asts directly
+//    - atoms have no children, only value or name (numlit/strlit/ident)
+//    - all S-expression lists have AstT as head, e.g. 'call', '*', ...
+//    - lists have N children, form depends on the AstT head
+//
+//------------------------------------------------------------------------
+function sexprAtom(lexer: Lexer, expected?: TokenType): Ast {
   const t = lexer.eatToken();
+  if (expected && expected !== t.type) lexer.error(`Expected ${expected}, got ${t.type}`, t);
   switch (t.type) {
-    case 'number':
-      return numlit(t.value, parseFloat(t.value));
-    case 'string':
-      return strlit(t.value);
-    case 'ident':
-      return ident(t.value);
-    default:
-      lexer.error(`Expected atom but got: ${t.type}`, t);
+    case 'numlit':  return { type: 'numlit', str: t.value, num: parseFloat(t.value), c:[] };
+    case 'strlit':  return { type: 'strlit', str: t.value, c: [] };
+    case 'ident':   return { type: 'ident', name: t.value, c: [] };
+    default:        return lexer.error('Expected number literal, string literal or identifier.', t);
   }
 }
-
-function sexprRest(lexer: Lexer): Node[] {
-  // TODO: if (t.value === ')') { lexer.eatToken(); return gen(op ? op : 'do', c); } ?
-  let c: Node[] = [];
+function rest(lexer: Lexer): Ast[] {
+  let c: Ast[] = [];
   while(lexer.peekToken().value !== ')') {
     assert(lexer.peekToken().type !== 'eof', 'Missing a closing paren? Parsed the file to the end and by my counts.. missing one, nih!');
     c.push(sexpr(lexer));
   }
-  lexer.eatToken('op', ')');
   return c;
 }
-
-function sexprParseList(lexer: Lexer, op?: string): Node {
-  const c: Node[] = [];
+function param(lexer: Lexer): Ast {
+  return { type: 'param', c: [sexpr(lexer)] }; // TODO: 'param' ident [:type]
+}
+function plist(lexer: Lexer): Ast {
+  return { type: 'plist', c: [sexpr(lexer)] }; // TODO: 'plist' param* [:type]
+}
+function sexprParseListAst(lexer: Lexer, astt: string /*AstT*/): Ast {
+  switch (astt) {
+    case 'module':    return { type: 'module',  c: [] };                                                      // 'module'
+    case 'doc':       return { type: 'doc',     c: [sexprAtom(lexer, 'strlit')] };                            // 'doc' strlit
+    case 'let':       return { type: 'let',     c: [sexprAtom(lexer, 'ident'), sexpr(lexer)] };               // 'let' ident expr
+    case 'set!':      return { type: 'set!',    c: [sexprAtom(lexer, 'ident'), sexpr(lexer)] };               // 'set!' ident expr
+    case 'inc!':      return { type: 'inc!',    c: [sexprAtom(lexer, 'ident')] };                             // 'inc!' ident
+    case 'forlt':     return { type: 'forlt',   c: [sexprAtom(lexer, 'ident'), sexpr(lexer), sexpr(lexer)] }; // 'forlt' ident num-expr num-expr
+    case 'do-while':  return { type: 'inc!',    c: [sexprAtom(lexer, 'ident')] };                             // TODO: 'do-while' (expr*) cond-expr
+    case 'fn':        return { type: 'fn',      c: [plist(lexer), ...rest(lexer)] };                          // TODO: 'fn' plist body-expr*
+    case 'return':    return { type: 'return',  c: [sexpr(lexer)] };                                          // 'return' [expr] - TODO: optional retvalue (check function signature)
+    case 'cast':      return { type: 'cast',    c: [sexpr(lexer), sexprAtom(lexer, 'type')] };                // 'cast' expr :type
+    case 'call':      return { type: 'call',    c: [sexprAtom(lexer, 'ident'), ...rest(lexer)] };             // 'call' ident expr*
+    case 'do':        return { type: 'do',      c: [...rest(lexer)] };                                        // 'do' stmt-expr*
+    case '+':         return { type: '+',       c: [sexpr(lexer), sexpr(lexer)] };                            // '+' expr expr (TODO: unary?)
+    case '-':         return { type: '-',       c: [sexpr(lexer), sexpr(lexer)] };                            // '-' expr expr (TODO: unary minus? Own astt?)
+    case '*':         return { type: '*',       c: [sexpr(lexer), sexpr(lexer)] };                            // '*' expr expr
+    case '/':         return { type: '/',       c: [sexpr(lexer), sexpr(lexer)] };                            // '/' expr expr
+    case '^':         return { type: '^',       c: [sexpr(lexer), sexpr(lexer)] };                            // '^' expr expr
+    case '==':        return { type: '==',      c: [sexpr(lexer), sexpr(lexer)] };                            // '==' expr expr
+    case '!=':        return { type: '!=',      c: [sexpr(lexer), sexpr(lexer)] };                            // '!=' expr expr
+    case '<':         return { type: '<',       c: [sexpr(lexer), sexpr(lexer)] };                            // '<'  expr expr
+    case '<=':        return { type: '<=',      c: [sexpr(lexer), sexpr(lexer)] };                            // '<=' expr expr
+    case '>':         return { type: '>',       c: [sexpr(lexer), sexpr(lexer)] };                            // '>'  expr expr
+    case '>=':        return { type: '>=',      c: [sexpr(lexer), sexpr(lexer)] };                            // '>=' expr expr
+    case 'bit-or':    return { type: '-',       c: [sexpr(lexer), sexpr(lexer)] };                            // '-' expr expr (TODO: unary minus? Own astt?)
+    case 'bit-and':   return { type: '*',       c: [sexpr(lexer), sexpr(lexer)] };                            // '*' expr expr
+    case 'bit-xor':   return { type: '/',       c: [sexpr(lexer), sexpr(lexer)] };                            // '/' expr expr
+    case 'bit-not':   return { type: '^',       c: [sexpr(lexer), sexpr(lexer)] };                            // '^' expr expr
+    case 'TODO:':     // TODO: do something with this marker?
+    default:          lexer.error(`TODO: tell the lazy compiler developer to implement this: ${astt}, nih!`); return { type: 'TODO:', c: [] };
+  }
+}
+function sexprParseList(lexer: Lexer, op?: string): Ast {
+  const c: Ast[] = [];
   lexer.eatToken('op', '(');
+  assert(lexer.peekToken().type !== 'eof', "Expected S-expression list to continue, got eof"); // TODO: tell the opening paren in error
+  assert(lexer.peekToken().value !== ')', "No empty list () allowed."); // TODO: allow () ?
 
-  const first = lexer.eatToken(); // TODO: allow empty ()?
-  debugp(first);
-  switch (first.value) {
-    case 'let': return gen('let', sexprRest(lexer));
-    case 'fun': return def(lexer.eatToken('ident').value, sexpr(lexer)); 
-    default:    lexer.error(`TODO: tell the lazy compiler developer to implement this: ${first.value}, nih!`);
-  }
+  const head = lexer.eatToken();
+  debug('parser', head);
+  const ast = sexprParseListAst(lexer, head.value);
+  lexer.eatToken('op', ')');
+
+  return ast;
 }
-
-function sexpr(lexer: Lexer): Node {
-  debugp('sexpr:');
-  debugp(lexer.peekToken());
-  return (lexer.peekToken().value === '(') ? sexprParseList(lexer) : sexprParseAtom(lexer);
-}
-
-function sexprParseModule(lexer: Lexer): Node {
-  const c: Node[] = [];
-  while(lexer.peekToken().type !== 'eof') {
-    c.push(sexpr(lexer));
-  }
-  return module(c);
+function sexpr(lexer: Lexer): Ast {
+  debug('parser', 'sexpr:', lexer.peekToken());
+  return (lexer.peekToken().value === '(') ? sexprParseList(lexer) : sexprAtom(lexer);
 }
 
 //------------------------------------------------------------------------
-// function resolveExpressionStack(lexer: Lexer, stack: Node[]): Node {
+// function resolveExpressionStack(lexer: Lexer, stack: Ast[]): Ast {
 //   // TODO: precedence and associativity rules - for KISS, left-associative binary operations for now
 //   let result = stack[0];
 //   for (let i = 1; i < stack.length; i += 2) {
@@ -68,7 +101,7 @@ function sexprParseModule(lexer: Lexer): Node {
 //   return result;
 // }
 
-// function parseExpression(lexer: Lexer): Node {
+// function parseExpression(lexer: Lexer): Ast {
 //   let stack = [];
 //   while (true) {
 //     let token = lexer.peekToken();
@@ -81,7 +114,7 @@ function sexprParseModule(lexer: Lexer): Node {
 //   return resolveExpressionStack(lexer, stack);
 // }
 
-// function parseExpression(lexer: Lexer): Node {
+// function parseExpression(lexer: Lexer): Ast {
 //   let token = lexer.peekToken();
 //   switch (token.type) {
 //     case 'number': case 'string': case 'ident':
@@ -93,10 +126,10 @@ function sexprParseModule(lexer: Lexer): Node {
 //   }
 // }
 
-// function parseFunctionDeclaration(lexer: Lexer): Node {
+// function parseFunctionDeclaration(lexer: Lexer): Ast {
 //   lexer.eatToken('ident', 'fun');
 //   const funcname = lexer.eatToken('ident').value;
-//   let params: Node[] = [];
+//   let params: Ast[] = [];
 //   while(true) {
 //     const token = lexer.eatToken();
 //     if (token.value === ')') break;
@@ -110,11 +143,11 @@ function sexprParseModule(lexer: Lexer): Node {
 //   return def(funcname, func(params, body, rtype), rtype);
 // }
 
-function parseExpr(lexer: Lexer): Node {
+function parseExpr(lexer: Lexer): Ast {
   return sexpr(lexer); // TODO
 }
 
-function parseOp(lexer: Lexer): Node {
+function parseOp(lexer: Lexer): Ast {
   let o = lexer.eatToken('op').value;
   if (o == '-') {
     return op('-', [parseExpr(lexer)]);
@@ -127,7 +160,7 @@ function parseOp(lexer: Lexer): Node {
   }
 }
 
-// function parseVariableDeclaration(lexer: Lexer): Node {
+// function parseVariableDeclaration(lexer: Lexer): Ast {
 //   const varname = lexer.eatToken('ident').value;
 //   const type = lexer.eatTokenIfType('ident')?.value; // e.g. "float"
 //   lexer.eatToken('op', '=');
@@ -135,31 +168,28 @@ function parseOp(lexer: Lexer): Node {
 //   return def(varname, value, type);
 // }
 
-// function parseControl(lexer: Lexer): Node {
+// function parseControl(lexer: Lexer): Ast {
 //   let type = lexer.eatToken().value; // e.g. 'if', 'while'
 //   let condition = parseExpression(lexer); // parse condition
 //   let body = parseList(lexer); // parse body
 //   return ctrl(type, condition, body);
 // }
 
-function parseStmt(lexer: Lexer): Node {
+function parseStmt(lexer: Lexer): Ast {
   return numlit('42', 42); // TODO:
 }
 
-function nihcParseModule(lexer: Lexer): Node {
-  // TODO: Nih-C
-  debugp("Parsing Nih-C..");
-  let c: Node[] = [];
-  while(lexer.peekToken().type != 'eof') {
-    c.push(parseStmt(lexer));
+export function parseModule(lexer: Lexer): Ast {
+  let c: Ast[] = [];
+  let token;
+  while((token = lexer.peekToken()).type != 'eof') {
+    if (token.value === '(') {
+      debug('parser', 'NIH-sexpr statement'); 
+      c.push(sexpr(lexer));
+    } else {
+      debug('parser', 'NIH-C statement');
+      error('TODO!');
+    }
   }
   return module(c);
-}
-
-export function parseModule(lexer: Lexer): Node {
-  // TODO: allow switching the language syntax in the middle of module!
-  switch(lexer.lang) {
-    case 'nih-sexpr': return sexprParseModule(lexer);
-    default:          return nihcParseModule(lexer);
-  }
 }

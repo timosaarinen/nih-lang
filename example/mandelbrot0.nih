@@ -13,7 +13,7 @@
     (let py (- (* 2 zx zy)))
     (set! zx (+ px cx))
     (set! zy (+ py cy))
-    (let d (sqrt (+ (^ zx 2) (^ zy 2))))
+    (let d (call sqrt (+ (^ zx 2) (^ zy 2))))
     (inc! n)
     (if (> d 2) (return 0.0))
   ) (< n maxiters))

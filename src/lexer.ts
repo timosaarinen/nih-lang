@@ -1,24 +1,21 @@
 import { debug, isDigit, isLetter, parseName, nextLineStart, strToEndOfLine, stripNewlines, strmatch } from './util';
 import { isKeyword, matchKeyword, matchOperator } from './langdef';
 
-type TokenType =
-  'eof' |     // Code stream ended
-  'keyword' | // NIH language keyword, e.g. 'fun', 'for'..
-  'ident' |   // identifier, name in value, e.g. 'foobar'
-  'type' |    // type annotation, e.g. ':int' -> 'int'
-  'string' |  // literal string, content in value, e.g. "Hello, World!"
-  'number' |  // number literal, string representation in value e.g. '42' or '3.141592'
+export type TokenType =
+  'eof'     | // Code stream ended
+  'keyword' | // NIH language keyword, e.g. 'fun', 'for'.. TODO: could combine with 'op', or make meta-heads all 'op' even if not short '+'
+  'ident'   | // identifier, name in value, e.g. 'foobar'
+  'type'    | // type annotation, e.g. ':int' -> 'int'
+  'strlit'  | // string literal, content in value, e.g. "Hello, World!"
+  'numlit'  | // number literal, string representation in value e.g. '42' or '3.141592'
   'op';       // all one or two character operators - in value e.g. '+', '-', '?', '(', '&&'
 
-type Lang = 
-  'nih' | 'nih-sexpr'
-
-const NO_RTYPE = ''; // TODO: null?
+const NO_RTYPE = ''; // no type annotation
 
 type Token = {
-  type: TokenType;
-  value: string;
-  rtype: string; // NO_RTYPE = none
+  type: TokenType; // TODO: tok? as in token class, could change rtype -> type?
+  value: string; // TODO: rename -> str?
+  rtype: string; // type annotation or NO_RTYPE
   posStartEnd: [number, number];
 };
 
@@ -28,8 +25,7 @@ export class Lexer {
   private source: string = "";
   private lineStart: number[] = new Array<number>(0); //[];
   private filename: string;
-  public lang: Lang = 'nih';
-
+  
   constructor(source: string = "", filename: string) {
     this.source = source;
     this.filename = filename;
@@ -68,8 +64,7 @@ export class Lexer {
 
       const char = src[index];
       const nextchar = (index + 1) < src.length ? src[index+1] : '';
-
-      let opdesc = matchOperator(src, index); // TODO: inside if?
+      let opdesc; //let opdesc = matchOperator(src, index);
 
       //---- Newline -----------------------------------------------------
       if (char === '\n') { 
@@ -113,26 +108,19 @@ export class Lexer {
         index = end;
       }
       //---- Operators ---------------------------------------------------
-      else if (opdesc) {
+      else if (opdesc = matchOperator(src, index)) {
         debug(`-> operator ${opdesc.str}`);
         this.pushTokenOp(opdesc.str, NO_RTYPE, index);
         index = opdesc.end;
       }
       //---- #pragma -----------------------------------------------------
-      // NOTE: every statement is an S-expression, if it starts with paren. No need for pragma:
-      //    let end: number | null; 
-      //    if (end = strmatch('#lang = nih-sexpr', src, index)) {
-      //          this.lang = 'nih-sexpr'; 
-      //          index = end; 
-      //          debug('** S-EXPRESSION MODE ENGAGED **'); 
-      //    }
       else if (char == '#') {
         debug('#pragma: ', strToEndOfLine(src, index));
         index = this.startNewline(nextLineStart(src, index));
       }
       //---- Identifiers -------------------------------------------------
       else if (isLetter(char)) {
-        const kwdesc = matchKeyword(src, index); // TODO: remove, checking isLetter() first
+        const kwdesc = matchKeyword(src, index);
         if (kwdesc) {
           debug('-> keyword');
           this.pushTokenRange('keyword', kwdesc.str, NO_RTYPE, kwdesc.start, kwdesc.end);

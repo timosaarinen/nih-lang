@@ -1,12 +1,50 @@
-import { assert } from './util.js'; // TODO
+import { assert } from './util.js';
 
-export interface Node {
-  type: string;
-  str?: string;
-  num?: number;
-  children?: Node[];
-  rtype?: string; // AST node NIH typeclass
+export type AstT =
+  'strlit'  | // .str contains the string
+  'numlit'  | // .num and also .str as the original exact string representation
+  'ident'   | // .name contains the identifier name
+  'module'  | // 'module'
+  'doc'     | // 'doc' strlit
+  'let'     | // 'let' ident expr
+  'set!'    | // 'set!' ident expr
+  'inc!'    | // 'inc!' ident
+  'do-while'| // 'do-while' (expr*) cond-expr
+  'unary +' | 'unary -' | '+' | '-' | '*' | '/' | '^' | // arithmetic operators
+  'bit-or' | 'bit-and' | 'bit-xor' | 'bit-not' | // bitwise-operators |&^~
+  '==' | '!=' | '>' | '>=' | '<' | '<=' | // conditional operators
+  'fn'      | // 'fn' plist body-expr*
+  'plist'   | // 'plist' param* [:type]
+  'param'   | // 'param' ident [:type]
+  'return'  | // 'return' expr
+  'forlt'   | // 'forlt' ident num-expr num-expr
+  'cast'    | // 'cast' ident :type
+  'call'    | // 'call' ident expr*
+  'do'      | // 'do' stmt-expr*  ..this is basically a group node to contain statements (TODO: better name)
+  'TODO:';
+
+export interface Ast {
+  type: AstT;     // 'strlit', 'numlit', 'ident', 'call', ...
+  name?: string;  // identifier name
+  str?: string;   // string literal value (and the original exact string representation for number literals)
+  num?: number;   // number literal value
+  c: Ast[];       // AST node children (e.g. '+' binary op has [expr, expr])
+  rtype?: string; // type annotation
 }
+
+export function name(n: Ast): string                  { assert(n.name != null, 'AST node has no name'); return n.name!; } // TODO: check type 'ident'?
+export function isident(n: Ast, id: string): boolean  { return (n.type == 'ident' && n.str == id); }
+export function number(n: Ast): number                { assert(n.num != null, 'AST node has no number representation'); return n.num!; }
+export function addchild(n: Ast, child?: Ast): Ast    { if (child) n.c.push(child); return n; }
+
+// Iterating children:  for(let i = start; i < ast.c.length; ++i) { ... }
+
+export function debugdump(n: Ast) {
+  console.log(JSON.stringify(n));
+}
+
+
+/* TODO: ref, remove
 export function module(c: Node[])                               : Node { return { type: 'module', children: c } }
 export function statements(c: Node[])                           : Node { return { type: 'do', children: c } }
 export function ident(s: string)                                : Node { return { type: 'ident', str: s } }
@@ -17,36 +55,4 @@ export function op(op: string, operands: Node[])                : Node { return 
 export function returns(expr: Node)                             : Node { return { type: 'return', children: [expr] } }
 export function func(p: Node[], b: Node, r: string | null)      : Node { return { type: 'func', children: [...p, b], rtype: r ?? undefined } }
 export function def(s: string, v: Node, r: string | null = null): Node { return { type: 'def', str: s, children: [v], rtype: r ?? undefined } }
-
-export function id(n: Node): string {
-  assert(n.str != null, 'AST node has no name');
-  return n.str!;
-}
-export function isId(n: Node, id: string): boolean {
-  return (!n.str) ? false : (n.str == id);
-}
-export function number(n: Node): number {
-  assert(n.num != null, 'AST node has no number representation');
-  return n.num!;
-}
-// TODO: change the naming to children
-export function foreach(n: Node, fun: (node: Node) => any) {
-  assert(n.children != null, 'AST node has no children')
-  return n.children!.map(fun);
-}
-export function foreachStartAt(n: Node, start: number, fun: (node: Node) => any) { 
-  assert(n.children != null, 'AST node has no children')
-  let res = [];
-  for(let i=start; i < n.children!.length; ++i) {
-    res.push(fun(n.children![i]));
-  }
-  return res;
-}
-export function addChild(n: Node, child?: Node): Node {
-  assert(!n.children, 'Not a list');
-  if (child) n.children!.push(child);
-  return n;
-}
-export function debugDump(n: Node) {
-  console.log(JSON.stringify(n));
-}
+*/
