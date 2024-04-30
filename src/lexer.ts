@@ -13,19 +13,18 @@ export type TokenClass =
   | 'numlit'  // .str, number literal, e.g. '42' or '3.141592'
   | 'type'    // .str/.rtype, type annotation, e.g. ':int' -> 'int'
 
-type Token = {
+export type Token = {
   cls: TokenClass;                // token class
   str: string;                    // the string representation of token, 'let', 'foobar', 'Hello, world!', '3.14', '(', 'int'
   posStartEnd: [number, number];  // src[start..end]
 };
 
-function pushtoken(tokens: Token[], cls: TokenClass, str: string, start: number, end: number) {
-  tokens.push({ cls: cls, str, posStartEnd: [start, end] });
-}
-function eoftoken(index: number): Token {
-  return { cls: 'eof', str: 'EOF', posStartEnd: [index, index] }
-}
+export function pushtoken(tokens: Token[], cls: TokenClass, str: string, start: number, end: number) { tokens.push({ cls: cls, str, posStartEnd: [start, end] }) }
+export function eoftoken(index: number): Token { return { cls: 'eof', str: 'EOF', posStartEnd: [index, index] } }
+export function iseof(token: Token): boolean { return token.cls === 'eof' }
 
+//------------------------------------------------------------------------
+//  TODO: no classes.
 //------------------------------------------------------------------------
 export class Lexer {
   public tokens: Token[] = [];

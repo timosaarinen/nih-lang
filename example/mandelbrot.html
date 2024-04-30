@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mandelbrot</title>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+       body {
+            font-family: Roboto, monospace;
+            margin: 24px;
+            line-height: 1.6;
+            background-color: #000;
+            color: #0F0;
+            height: 100%;
+        }
+
+        /* TODO: use this for something? */
+        .arrow {
+            width: 100px; /* Width of the arrow */
+            height: 100px; /* Height of the arrow */
+            background-color: transparent; /* Transparent background */
+            position: relative; /* Relative positioning */
+            border-top: 5px solid transparent; /* Top border transparent */
+            border-bottom: 5px solid transparent; /* Bottom border transparent */
+            border-left: 5px solid #0F0; /* Bright green left border */
+        }
+        .arrow::after {
+            content: ""; /* Necessary to display pseudo-element */
+            position: absolute; /* Absolute positioning relative to the parent */
+            top: -5px; /* Position from the top */
+            right: -5px; /* Position from the right */
+            width: 0; /* Width of 0 */
+            height: 0; /* Height of 0 */
+            border-top: 10px solid transparent; /* Top border transparent */
+            border-bottom: 10px solid transparent; /* Bottom border transparent */
+            border-left: 10px solid #0F0; /* Bright green left border */
+        }
+
+        .function-big-name {
+          width: 33%;
+          font-size: 2rem;
+          font-weight: bold;
+          color: #FFF;
+        }
+        .function-overview {
+          font-size: 16px;
+          color: #0f0;
+        }
+        .function-signature {
+          font-size: 1em;
+          color: #aaa;
+        }
+        .function-name {
+          font-weight: bold;
+          color: #005A9C;
+        }
+        .param {
+          color: #FFD700; 
+        }
+        .returns {
+            color: #FFD700; 
+        }
+        .description {
+            margin-top: 0;
+        }
+        .type-name {
+            font-style: italic;
+            color: #9C27B0
+        }
+        .type-vec2 {
+            font-style: italic;
+            color: #9C27B0;
+            font-weight: bold;
+        }
+        .description {
+            margin-top: 0;
+            margin-bottom: 24px;
+        }
+        pre {
+          background-color: #222;
+          padding: 16px;
+        }
+        h2 { 
+          font-size: 1.1rem; 
+        }
+        .pagecontainer {
+          width: 100%;
+          height: 100%;
+            display: flex; 
+            flex-direction: row;
+            align-items: center; /* Vertically centers items in the container */
+        }
+        .container {
+          width: 100%;
+          display: flex;
+          flex-flow: row;
+          align-items: center;
+        }
+        .caption {
+          width: 100%;
+          font-weight: 1000;
+          font-size: 24px;
+          margin-bottom: 16px;
+        }
+        .box {
+          height: 300px;
+          margin: -2px;
+          padding: 12px;
+          border: 1px solid #0F0;
+          box-shadow: 0 4px 8px rgba(0, 255, 0, 0.3);
+          text-align: justify;
+        }
+        
+    </style>
+</head>
+<body>
+  <div class="pagecontainer">
+    
+    <div class="function-big-name">
+      <span class="type-name">int</span> mandelbrot(
+        <span class="type-name">vec2</span> c
+      )
+    </div>
+
+    <div class="container">
+
+      <div class="function-overview box">
+        <div class="caption">Why?</div>
+        
+        Calculates the number of iterations required to determine
+        whether a given point \( c = c_x + c_yi \) in the complex plane is part of the Mandelbrot set.
+      </div>
+
+      <div class="function-parameters box">
+        <div class="caption">Input?</div>
+        <span class="param">c</span>
+        <span class="type-name">vec2</span> 
+        - The complex number represented as a 2D vector, where <code>c.x</code> is the real part and <code>c.y</code> is the imaginary part.</li>
+      </div>
+
+      <div class="function-returns box">
+        <div class="caption">Output?</div>
+        <span class="type-name">int</span>
+        The number of iterations before the sequence escapes the radius of 2 around the origin, or 0 if the sequence does not escape within the maximum number of iterations.
+      </div>
+
+      <div class="function-details box">
+        <div class="caption">Details?</div>
+          In the Mandelbrot set, for each point \( c = c_x + c_yi \), the function iterates \( Z_{n+1} = Z_n^2 + c \) starting from \( Z_0 = 0 \) and determines whether the sequence remains bounded. If the magnitude of \( Z_n \) exceeds 2 at any iteration, the sequence will escape to infinity, and the point \( c \) is not in the Mandelbrot set. The number of iterations before this escape is what we typically visualize in Mandelbrot set images.
+      </div>
+    </div>
+  </div>
+</body>
+</html>

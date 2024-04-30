@@ -2,8 +2,17 @@
 (let WIDTH 16)
 (let HEIGHT 16)
 
-(let mandelbrot (fn (plist (param cx :float) (param cy :float) :int)
-  (doc "@returns # of iterations (0 if not in Mandelbrot set)")
+//------------------------------------------------------------------------
+//  Mandelbrot with no vector types
+//------------------------------------------------------------------------
+(let mandelbrot0 (fn (plist 
+    (param cx :float) 
+    (param cy :float) 
+    (returns :int (doc "# of iterations, 0 if not in Mandelbrot set"))
+    (doc """In the Mandelbrot set, for each point c = c_x + c_y<i>, iterate function Z_n+1 = z^2_n + c starting from z_0 = 0 and
+            determine whether the sequence remains bounded. If the magnitude of Z_n exceeds 2 at any iteration, the sequence will
+            escape to infinity, and the point c is not in the Mandelbrot set. The number of iterations before this escape is what
+            we typically visualize in Mandelbrot set images."""))
   (let maxiters 80)
   (set! zx 0)
   (set! zy 0)
@@ -19,6 +28,56 @@
   ) (< n maxiters))
   (return n)))
 
+//------------------------------------------------------------------------
+//  Mandelbrot with 2D vector (vec2) parameter
+//------------------------------------------------------------------------
+(let mandelbrot (fn (plist 
+    (param c :vec2) 
+    (returns :int (doc "# of iterations, 0 if not in Mandelbrot set"))
+    (doc """Calculates the number of iterations required to determine whether a given 
+            point \( c = c_x + c_yi \) in the complex plane is part of the Mandelbrot set.""")
+  (let maxiters 99)                                           ; maxiters = 99           ; '=' is immutable equality
+  (set! z (vec2 0 0))                                         ; z := vec2(0.0, 0.0)     ; constructor syntax (GLSL-like vector types, but not as strict)
+  (set! n 0)                                                  ; n := 0                  ; ':=' is mutable assignment (no pre-declaration required)
+  (do-while (                                                 ; do {
+    (let p (vec2 (- (^ z.x 2) (^ z.y 2)) (* -2 (* z.x z.y)))) ;    p = vec2( z.x^2 - z.y^2, -2*z.x*zy )
+    (set! z (+ p c))                                          ;    z = p + c
+    (let d (call length z))                                   ;    d = length(z)        ; == sqrt( z.x^2, z.y^2 ) == (call sqrt (+ (^ zx 2) (^ zy 2)))
+    (inc! n)                                                  ;    n++
+    (if (> d 2) (return 0.0))                                 ;    if (d > 2) return 0
+  ) (< n maxiters))                                           ; } while(n < maxiters)
+  (return n))                                                 ; return n
+  (doc """In the Mandelbrot set, for each point c = c_x + c_y<i>, iterate function Z_n+1 = z^2_n + c starting from z_0 = 0 and
+          determine whether the sequence remains bounded. If the magnitude of Z_n exceeds 2 at any iteration, the sequence will
+          escape to infinity, and the point c is not in the Mandelbrot set. The number of iterations before this escape is what
+          we typically visualize in Mandelbrot set images.""")))
+
+//------------------------------------------------------------------------
+//  Mandelbrot auto-documented
+//------------------------------------------------------------------------
+(let mandelbrot-explained-more (fn (plist 
+    (param c :vec2) 
+    (returns :int (doc "# of iterations, 0 if not in the Mandelbrot set"))
+    (doc """In the Mandelbrot set, for each point c = c_x + c_y<i>, iterate function Z_n+1 = z^2_n + c starting from z_0 = 0 and
+            determine whether the sequence remains bounded. If the magnitude of Z_n exceeds 2 at any iteration, the sequence will
+            escape to infinity, and the point c is not in the Mandelbrot set. The number of iterations before this escape is what
+            we typically visualize in Mandelbrot set images."""))
+  (let maxiters 99)                                           ; Max iterations set to 99
+  (set! z (vec2 0 0))                                         ; Initialize z as a 2D vector (0,0)
+  (set! n 0)                                                  ; Initialize iteration counter n to 0
+  (do-while (                                                 ; Begin do-while loop
+    (let p (vec2 (- (^ z.x 2) (^ z.y 2)) (* -2 (* z.x z.y)))) ; Calculate p as z^2 (real and imaginary parts)
+    (set! z (+ p c))                                          ; Update z to z^2 + c
+    (let d (call length z))                                   ; Calculate the magnitude of z
+    (inc! n)                                                  ; Increment the iteration counter
+    (if (> d 2) (return 0))                                   ; If magnitude > 2, return 0 indicating escape
+  ) (< n maxiters))                                           ; Continue while n is less than max iterations
+  (return n)))                                                ; Return the iteration count if no escape
+
+
+//------------------------------------------------------------------------
+//  Main
+//------------------------------------------------------------------------
 (let rs -2.0)
 (let re 1.0)
 (let is -1.0)

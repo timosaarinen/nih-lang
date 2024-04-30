@@ -1,4 +1,4 @@
-import { Lexer, TokenClass } from './lexer';
+import { Lexer, Token, TokenClass, iseof } from './lexer';
 import { Ast, AstT } from './ast';
 import { assert, log, error } from './util';
 
@@ -24,22 +24,28 @@ function sexprAtom(lexer: Lexer, expected?: TokenClass): Ast {
     case 'ident':   return { type: 'ident', name: t.str, c: [] };
     default:        return lexer.error('Expected number literal, string literal or identifier.', t);
   }
-}
-function rest(lexer: Lexer): Ast[] {
-  let c: Ast[] = [];
-  while(lexer.peekToken().str !== ')') {
-    assert(lexer.peekToken().str !== 'eof', 'Missing a closing paren? Parsed the file to the end and by my counts.. missing one, nih!');
-    c.push(sexpr(lexer));
-  }
-  return c;
-}
+} 
 function param(lexer: Lexer): Ast {
+  debug("'param' ident [:type]");
   return { type: 'param', c: [sexpr(lexer)] }; // TODO: 'param' ident [:type]
 }
 function plist(lexer: Lexer): Ast {
-  return { type: 'plist', c: [sexpr(lexer)] }; // TODO: 'plist' param* [:type]
+  debug("'plist' param* [:type]"); // e.g. (let mandelbrot (fn (plist (param cx :float) (param cy :float) :int) ...) -> (param cx :float)...
+  let params: Ast[] = [];
+  let token: Token;
+  while ((token = lexer.peekToken()).str !== ')') {
+    if (token.str !== '(') {
+      // must be :type.. NOTE: actually accepting it before (param) -> the order doesn't matter (..but matters in params)
+      
+    } else {
+
+    }
+  }
+  return { type: 'plist', c }; // 'plist' param* [:type]
 }
-function sexprParseListAst(lexer: Lexer, head: string): Ast {
+function sexprListAst(lexer: Lexer, head: string): Ast {
+  // - outer parens and the head is eaten by caller, parse the inner rest/tail part (foo 2 (bar 4)) -> 2 (bar 4)
+  // - for the next elements, can call sexpr() for any, or sexprAtom() and sexprList() for explicit atom/list expected
   switch (head) {
     case 'module':    return { type: 'module',  c: [] };                                                      // 'module'
     case 'doc':       return { type: 'doc',     c: [sexprAtom(lexer, 'strlit')] };                            // 'doc' strlit
@@ -48,7 +54,9 @@ function sexprParseListAst(lexer: Lexer, head: string): Ast {
     case 'inc!':      return { type: 'inc!',    c: [sexprAtom(lexer, 'ident')] };                             // 'inc!' ident
     case 'forlt':     return { type: 'forlt',   c: [sexprAtom(lexer, 'ident'), sexpr(lexer), sexpr(lexer)] }; // 'forlt' ident num-expr num-expr
     case 'do-while':  return { type: 'inc!',    c: [sexprAtom(lexer, 'ident')] };                             // TODO: 'do-while' (expr*) cond-expr
-    case 'fn':        return { type: 'fn',      c: [plist(lexer), ...rest(lexer)] };                          // TODO: 'fn' plist body-expr*
+    case 'fn':        return { type: 'fn',      c: [sexprList(lexer), ...rest(lexer)] };                 // TODO: 'fn' plist body-expr*
+    case 'plist':     return plist(lexer); //return { type: 'plist',   c: [...rest()]}
+    case 'param':     return param(lexer);
     case 'return':    return { type: 'return',  c: [sexpr(lexer)] };                                          // 'return' [expr] - TODO: optional retvalue (check function signature)
     case 'cast':      return { type: 'cast',    c: [sexpr(lexer), sexprAtom(lexer, 'type')] };                // 'cast' expr :type
     case 'call':      return { type: 'call',    c: [sexprAtom(lexer, 'ident'), ...rest(lexer)] };             // 'call' ident expr*
@@ -68,6 +76,9 @@ function sexprParseListAst(lexer: Lexer, head: string): Ast {
     case 'AND':       return { type: 'AND',     c: [sexpr(lexer), sexpr(lexer)] };                            // 'AND' expr expr
     case 'XOR':       return { type: 'XOR',     c: [sexpr(lexer), sexpr(lexer)] };                            // 'XOR' expr expr
     case 'NOT':       return { type: 'NOT',     c: [sexpr(lexer), sexpr(lexer)] };                            // 'NOT' expr expr
+    case '!':         return { type: '!',       c: [sexpr(lexer), sexpr(lexer)] };                            // '|' expr expr
+    case '&&':        return { type: '&&',      c: [sexpr(lexer), sexpr(lexer)] };                            // '&&' expr expr
+    case '||':        return { type: '||',      c: [sexpr(lexer), sexpr(lexer)] };                            // '||' expr expr
     case 'unary-minus': 
       return { type: 'unary-minus', c: [sexpr(lexer)] };
     case 'TODO:': // TODO: do something with this marker?
@@ -75,41 +86,87 @@ function sexprParseListAst(lexer: Lexer, head: string): Ast {
       lexer.error(`TODO: tell the laazyy compiler developer to implement this: ${head}, nih!`); return { type: 'TODO:', c: [] };
   }
 }
-function sexprParseList(lexer: Lexer, op?: string): Ast {
-  const c: Ast[] = [];
+function sexprList(lexer: Lexer, op?: string): Ast {
+  // e.g. (foo 1 2 (bar 42))
   lexer.eatToken('kw', '(');
   assert(lexer.peekToken().cls !== 'eof', "Expected S-expression list to continue, got eof"); // TODO: tell the opening paren in error
   assert(lexer.peekToken().str !== ')', "No empty list () allowed."); // TODO: allow () ?
-
   const head = lexer.eatToken();
-  debug(head);
-  const ast = sexprParseListAst(lexer, head.str); // TODO: no forcecast, map?
+  const ast = sexprListAst(lexer, head.str); // TODO: no forcecast, map?
   lexer.eatToken('kw', ')');
-
   return ast;
 }
 function sexpr(lexer: Lexer): Ast {
   debug('sexpr:', lexer.peekToken());
-  return (lexer.peekToken().str === '(') ? sexprParseList(lexer) : sexprAtom(lexer);
+  return (lexer.peekToken().str === '(') ? sexprList(lexer) : sexprAtom(lexer);
 }
 
+//------------------------------------------------------------------------
+//
+//  NIH-C Syntax Parsing
+//    - partial example for reference:
+//
+//          ### Top-level local constants ################################
+//          WIDTH = 16
+//          HEIGHT = 16
+//          
+//          ### Function #################################################
+//          :float mandelbrot(:float cx, :float cy)
+//            ### returns # of iterations (0 if not in Mandelbrot set)
+//            maxiters = 80
+//            zx := 0
+//            zy := 0
+//            n := 0
+//            do:
+//              px = zx^2 - zy^2
+//              py = 2 * zx * zy
+//              zx := px + cx
+//              zy := py + cy
+//              d = sqrt(zx^2 + zy^2)
+//              n++
+//              if d > 2 return 0 // if not in Mandelbrot set, early return
+//            while n < maxiters
+//            return n
+//
+//          ### Top-level main ###########################################
+//          for i = 0..WIDTH
+//            for j = 0..HEIGHT
+//              cx = rs + :float i / WIDTH * (re - rs)
+//              cy = is + :float j / HEIGHT * (ie - is)
+//              m = mandelbrot(cx, cy)
+//              printchars(m > 0.0 ? '*' : ' ')
+//            printlf()
+//------------------------------------------------------------------------
+function nihexpr(lexer: Lexer): Ast {
+  error("TODO: Nih-C syntax parsing")
+}
+
+//------------------------------------------------------------------------
+//  Public API
+//------------------------------------------------------------------------
 export function parseModule(lexer: Lexer): Ast {
   let c: Ast[] = [];
-  let token;
-  while((token = lexer.peekToken()).cls != 'eof') {
-    if (token.str === '(') {
-      debug('** NIH-sexpr statement'); 
-      c.push(sexpr(lexer));
-    } else {
-      debug('-- NIH-C statement');
-      error('TODO!');
-    }
+  let token: Token;
+  while(token = lexer.peekToken(), iseof(token)) {              // while((token = lexer.peekToken()).cls != 'eof') {
+    c.push(token.str === '(' ? sexpr(lexer) : nihexpr(lexer));  // all statements starting with '(' are treated as S-expressions
   }
   return { type: 'module',  c: c };
 }
 
 
 
+
+
+
+// function sexprRest(lexer: Lexer): Ast[] {
+//   // parse the rest of "open sexpr", e.g. original (foo 42 bar) -> 42 bar)
+//   let c: Ast[] = [];
+//   while(lexer.peekToken().str !== ')') {
+//     assert(lexer.peekToken().str !== 'eof', 'Missing a closing paren? Parsed the file to the end and by my counts.. missing one, nih!');
+//     c.push(sexpr(lexer));
+//   }
+//   return c;
+// }
 
 //------------------------------------------------------------------------
 // function resolveExpressionStack(lexer: Lexer, stack: Ast[]): Ast {
@@ -162,7 +219,7 @@ export function parseModule(lexer: Lexer): Ast {
 //   }
 //   const t = lexer.eatTokenIfType('op', ':');
 //   const rtype = (t) ? lexer.eatToken().value : null; // consume optional return type
-//   const body = sexprParseList(lexer);
+//   const body = sexprList(lexer);
 //   return def(funcname, func(params, body, rtype), rtype);
 // }
 

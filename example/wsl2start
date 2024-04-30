@@ -1,0 +1,13 @@
+#!/bin/bash
+
+# Check if there is an argument
+if [ "$#" -ne 1 ]; then
+    echo "Usage: $0 <path-to-file>"
+    exit 1
+fi
+
+# Convert WSL path to Windows path
+WIN_PATH=$(wslpath -w "$1")
+
+# Start the file using the Windows default application
+cmd.exe /c start "$WIN_PATH"
