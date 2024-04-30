@@ -2,6 +2,28 @@
 (let WIDTH 16)
 (let HEIGHT 16)
 
+(let mandelbrot (fn (plist 
+    (param c :vec2) 
+    (returns :int (doc "# of iterations, 0 if not in Mandelbrot set"))
+    (doc """Calculates the number of iterations required to determine whether a given 
+            point \( c = c_x + c_yi \) in the complex plane is part of the Mandelbrot set.""")
+  (let maxiters 99)                                           ; maxiters = 99           ; '=' is immutable equality
+  (set! z (vec2 0 0))                                         ; z := vec2(0.0, 0.0)     ; constructor syntax (GLSL-like vector types, but not as strict)
+  (set! n 0)                                                  ; n := 0                  ; ':=' is mutable assignment (no pre-declaration required)
+  (do-while (                                                 ; do {
+    (let p (vec2 (- (^ z.x 2) (^ z.y 2)) (* -2 (* z.x z.y)))) ;    p = vec2( z.x^2 - z.y^2, -2*z.x*zy )
+    (set! z (+ p c))                                          ;    z = p + c
+    (let d (call length z))                                   ;    d = length(z)        ; == sqrt( z.x^2, z.y^2 ) == (call sqrt (+ (^ zx 2) (^ zy 2)))
+    (inc! n)                                                  ;    n++
+    (if (> d 2) (return 0.0))                                 ;    if (d > 2) return 0
+  ) (< n maxiters))                                           ; } while(n < maxiters)
+  (return n))                                                 ; return n
+  (doc """In the Mandelbrot set, for each point c = c_x + c_y<i>, iterate function Z_n+1 = z^2_n + c starting from z_0 = 0 and
+          determine whether the sequence remains bounded. If the magnitude of Z_n exceeds 2 at any iteration, the sequence will
+          escape to infinity, and the point c is not in the Mandelbrot set. The number of iterations before this escape is what
+          we typically visualize in Mandelbrot set images.""")))
+
+
 //------------------------------------------------------------------------
 //  Mandelbrot with no vector types
 //------------------------------------------------------------------------
@@ -27,30 +49,6 @@
     (if (> d 2) (return 0.0))
   ) (< n maxiters))
   (return n)))
-
-//------------------------------------------------------------------------
-//  Mandelbrot with 2D vector (vec2) parameter
-//------------------------------------------------------------------------
-(let mandelbrot (fn (plist 
-    (param c :vec2) 
-    (returns :int (doc "# of iterations, 0 if not in Mandelbrot set"))
-    (doc """Calculates the number of iterations required to determine whether a given 
-            point \( c = c_x + c_yi \) in the complex plane is part of the Mandelbrot set.""")
-  (let maxiters 99)                                           ; maxiters = 99           ; '=' is immutable equality
-  (set! z (vec2 0 0))                                         ; z := vec2(0.0, 0.0)     ; constructor syntax (GLSL-like vector types, but not as strict)
-  (set! n 0)                                                  ; n := 0                  ; ':=' is mutable assignment (no pre-declaration required)
-  (do-while (                                                 ; do {
-    (let p (vec2 (- (^ z.x 2) (^ z.y 2)) (* -2 (* z.x z.y)))) ;    p = vec2( z.x^2 - z.y^2, -2*z.x*zy )
-    (set! z (+ p c))                                          ;    z = p + c
-    (let d (call length z))                                   ;    d = length(z)        ; == sqrt( z.x^2, z.y^2 ) == (call sqrt (+ (^ zx 2) (^ zy 2)))
-    (inc! n)                                                  ;    n++
-    (if (> d 2) (return 0.0))                                 ;    if (d > 2) return 0
-  ) (< n maxiters))                                           ; } while(n < maxiters)
-  (return n))                                                 ; return n
-  (doc """In the Mandelbrot set, for each point c = c_x + c_y<i>, iterate function Z_n+1 = z^2_n + c starting from z_0 = 0 and
-          determine whether the sequence remains bounded. If the magnitude of Z_n exceeds 2 at any iteration, the sequence will
-          escape to infinity, and the point c is not in the Mandelbrot set. The number of iterations before this escape is what
-          we typically visualize in Mandelbrot set images.""")))
 
 //------------------------------------------------------------------------
 //  Mandelbrot auto-documented
