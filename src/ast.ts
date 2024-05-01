@@ -34,6 +34,7 @@ export interface Ast {
   rtype?: string; // type annotation
 }
 
+export function nop(): Ast                            { return { type: 'do', c: [] }; }
 export function getident(n: Ast): string              { assert(n.type === 'ident', 'AST node is not an ident'); return n.name!; }
 export function getname(n: Ast): string               { assert(n.name != null, 'AST node has no name'); return n.name!; }
 export function getnumlit(n: Ast): number             { assert(n.type === 'numlit', 'AST node has no number representation'); return n.num!; }

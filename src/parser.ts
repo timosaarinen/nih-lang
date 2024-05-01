@@ -1,6 +1,6 @@
 import { Lexer, Token, TokenClass, iseof } from './lexer';
-import { Ast, AstT } from './ast';
-import { assert, log, error } from './util';
+import { Ast, AstT, nop } from './ast';
+import { assert, log, error, fmt } from './util';
 
 function debug(...args: any[]) { 
   log('PARSER:', ...args); // DEBUG: uncomment to enable debug logging
@@ -24,24 +24,38 @@ function sexprAtom(lexer: Lexer, expected?: TokenClass): Ast {
     case 'ident':   return { type: 'ident', name: t.str, c: [] };
     default:        return lexer.error('Expected number literal, string literal or identifier.', t);
   }
-} 
+}
+function rest(lexer: Lexer): Ast[] {
+  // parse the rest of "open sexpr", e.g. original (foo 42 bar) -> 42 bar)
+  let c: Ast[] = [];
+  while(lexer.peekToken().str !== ')') {
+    assert(lexer.peekToken().str !== 'eof', 'Missing a closing paren? Parsed the file to the end and by my counts.. missing one, nih!');
+    c.push(sexpr(lexer));
+  }
+  return c;
+}
 function param(lexer: Lexer): Ast {
   debug("'param' ident [:type]");
   return { type: 'param', c: [sexpr(lexer)] }; // TODO: 'param' ident [:type]
 }
 function plist(lexer: Lexer): Ast {
   debug("'plist' param* [:type]"); // e.g. (let mandelbrot (fn (plist (param cx :float) (param cy :float) :int) ...) -> (param cx :float)...
-  let params: Ast[] = [];
+  let fn: Ast = { type: 'fn', c: []} ;
   let token: Token;
   while ((token = lexer.peekToken()).str !== ')') {
     if (token.str !== '(') {
-      // must be :type.. NOTE: actually accepting it before (param) -> the order doesn't matter (..but matters in params)
-      
+      // must be function return :type.. NOTE: actually accepting it before (param) -> the order doesn't matter.. but matters in params! (kinda)
+      let rettype = lexer.eatTokenIfType('type');
+      debug('Hey, someone actually typed this function, got returns: ${rettype}!');
+      fn.rtype = token.str;
     } else {
-
+      // ok, parameter list node (not actual "args".. weird that this becomes such a problem to remember what is what in function call context..)
+      const param = sexpr(lexer);
+      debug(param);
+      fn.c.push(param);
     }
   }
-  return { type: 'plist', c }; // 'plist' param* [:type]
+  return fn; // 'plist' param* [:type]
 }
 function sexprListAst(lexer: Lexer, head: string): Ast {
   // - outer parens and the head is eaten by caller, parse the inner rest/tail part (foo 2 (bar 4)) -> 2 (bar 4)
@@ -139,6 +153,7 @@ function sexpr(lexer: Lexer): Ast {
 //------------------------------------------------------------------------
 function nihexpr(lexer: Lexer): Ast {
   error("TODO: Nih-C syntax parsing")
+  return nop();
 }
 
 //------------------------------------------------------------------------
@@ -154,19 +169,6 @@ export function parseModule(lexer: Lexer): Ast {
 }
 
 
-
-
-
-
-// function sexprRest(lexer: Lexer): Ast[] {
-//   // parse the rest of "open sexpr", e.g. original (foo 42 bar) -> 42 bar)
-//   let c: Ast[] = [];
-//   while(lexer.peekToken().str !== ')') {
-//     assert(lexer.peekToken().str !== 'eof', 'Missing a closing paren? Parsed the file to the end and by my counts.. missing one, nih!');
-//     c.push(sexpr(lexer));
-//   }
-//   return c;
-// }
 
 //------------------------------------------------------------------------
 // function resolveExpressionStack(lexer: Lexer, stack: Ast[]): Ast {
