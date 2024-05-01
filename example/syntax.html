@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Compact Dark Theme Code Snippet with Highlighted Syntax</title>
+    <style>
+        body {
+            background-color: #000; /* Dark background for the entire page */
+            color: #d4d4d4; /* Light grey text color for contrast */
+            font-family: Arial, sans-serif; /* Ensures text is readable */
+            margin: 0;
+            padding: 20px;
+        }
+        code {
+            background-color: #000; /* Slightly lighter dark shade for the code block */
+            border-left: 3px solid #007acc; /* Bright blue for a bit of color */
+            color: #9CDCFE; /* Soft blue for the text, good for code highlighting */
+            display: block;
+            font-family: 'Courier New', Courier, monospace; /* Monospace for code styling */
+            padding: 10px; /* Reduced padding for a more compact look */
+            margin: 10px 0;
+            white-space: pre-wrap; /* Maintains whitespace formatting */
+            word-wrap: break-word; /* Prevents long lines from breaking layout */
+            line-height: 0.6; /* Reduced line height for a more compact line spacing */
+        }
+        .arrow { color: #ce9178; } /* Light salmon color for arrows, adds visibility */
+        .type { color: #4EC9B0; } /* Mint color for type annotations */
+        .keyword { color: #C586C0; font-weight: bold; } /* Pink color for keywords, bold for emphasis */
+    </style>
+</head>
+<body>
+    <code>
+        <span class="keyword">fun</span> foo(v) <span class="arrow">→</span> <span class="type">int</span><br>
+        &nbsp;&nbsp;v is <span class="type">int</span>    <span class="arrow">→</span> v<br>
+        &nbsp;&nbsp;v is <span class="type">string</span> <span class="arrow">→</span> v.toint()
+    </code>
+</body>
+</html>

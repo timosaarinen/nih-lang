@@ -93,7 +93,7 @@ export class Lexer {
       }
       //---- Comments ----------------------------------------------------
       // TODO: nestable block comments /* */
-      else if ((char === '/' && nextchar === '/') || (char === '#' && /\s/.test(nextchar))) {
+      else if ((char === '/' && nextchar === '/') || (char == ';') || (char === '#' && /\s/.test(nextchar))) {
         debug('-> line comment');
         index = this.startnewline(nextLineStart(src, index));
       }

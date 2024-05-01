@@ -23,6 +23,10 @@
                 "match": "#.*"
             },
             {
+                "name": "comment.line.asm.nih",
+                "match": ";.*"
+            },
+            {
                 "name": "comment.block.nih",
                 "begin": "/\\*",
                 "end": "\\*/"
