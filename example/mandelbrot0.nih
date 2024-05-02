@@ -93,6 +93,6 @@ type Map = [:K] :V[] ; Map = (key :K) -> value :V.. nope, the state/object/bits-
   for x in maparr: if x.0 == key return x.1 ; .0 and .1 to access the first and second index of an array or tuple
   fatalerror 'No key $key found in this map! Exiting to DOS.'
 
-/* OT: Come on.. implement the damn nested comments! */
+/* OT: Come on.. implement the damn nested comments! ..UPDATE: Hey, at last it works. */
 
 */ ; why you VSC/Textmate.. will NOT fix the grammar, it has regexps!
