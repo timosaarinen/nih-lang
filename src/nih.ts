@@ -1,7 +1,7 @@
 import { emitjs } from './emitjs.js';
 import { Lexer } from './lexer.js';
 import { readFileSync } from 'fs'; // node
-import { parseModule } from './parser.js';
+import { dumpast, parseModule } from './parser.js';
 import { glog, glogenable } from './util.js';
 
 glogenable('verbose'); // uncomment to enable verbose mode
@@ -36,7 +36,7 @@ glog('verbose', "----<< Tokens -----------------------------------------------\n
 let ast = parseModule(lexer);
 
 glog('verbose', "---- Abstract Syntax Tree (AST) >>---------------------------")
-//debugdump(ast);
+dumpast(ast);
 glog('verbose', "----<< Abstract Syntax Tree (AST) ---------------------------\n")
 
 let jscode = emitjs(ast)

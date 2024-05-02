@@ -44,6 +44,7 @@ export type AstT =
   | 'cast'            // 'cast' ident :type
   | 'call'            // 'call' ident expr*
   | 'do'              // 'do' stmt-expr*  ..this is basically a group node to contain statements (TODO: better name)
+  | 'loop'            // 'loop' 
   | 'TODO:';
 
 export interface Ast {

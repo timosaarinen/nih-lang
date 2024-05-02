@@ -165,6 +165,9 @@ export function parseModule(lexer: Lexer): Ast {
   return { type: 'module',  c: c };
 }
 
+export function dumpast(ast: Ast) {
+  log(`${ast} ${ast.c.forEach((child, index) => dumpast(ast)) }`);
+}
 
 
 //------------------------------------------------------------------------

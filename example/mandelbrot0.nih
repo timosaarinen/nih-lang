@@ -66,3 +66,33 @@
     (let m (call mandelbrot c))
     (call printchars (? (> m 0.0) '*' ' '))
     (call printlf)))
+
+
+/*
+//------------------------------------------------------------------------
+//  "In your language how do you make something of the type map<k,v> 
+//   and how do you make an instance of that type"
+//
+//  ..this is from the top of my head for now, mind! i.e. conceptual
+//------------------------------------------------------------------------
+
+type Map = [:K] :V[] ; Map = (key :K) -> value :V.. nope, the state/object/bits-in-the-machine, the array
+
+:Map newmap(K :type, V :type)
+  ; ..build a mapping K value -> V value
+  ; - usually hashmap etc
+  ; - but let's just do simple linear array:
+  maparr := [:K] :V[]     ; TODO: not sure about this syntax..
+  return maparr
+
+//:Map mapadd(maparr :Map, K: type, V: type, key: K, value: V)  ; K/V don't need to be passed, take from the passed Map type
+:Map mapadd(maparr :Map, key: K, value: V)
+  return maparr.push([key, value])
+
+:V mapget(maparr: Map, key: K)
+  for x in maparr: if x.0 == key return x.1 ; .0 and .1 to access the first and second index of an array or tuple
+  fatalerror 'No key $key found in this map! Exiting to DOS.'
+
+/* OT: Come on.. implement the damn nested comments! */
+
+*/ ; why you VSC/Textmate.. will NOT fix the grammar, it has regexps!

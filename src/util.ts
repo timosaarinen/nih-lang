@@ -6,8 +6,18 @@ export function fmt(...args: any[]): any {
   return args.map(arg => typeof arg === 'object' ? JSON.stringify(arg) : String(arg)).join(' ');
 }
 
-export function error(msg: string): any {
-  throw new Error(msg);
+export function errorbox(...args: any[]) {
+  let text = fmt(args);
+  console.log('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
+  console.log('');
+  console.log(text);
+  console.log();
+  console.log('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
+  return text;
+}
+
+export function error(...args: any[]): any {
+  throw new Error(errorbox(args));
 }
 
 export function assert(shouldbetrue: boolean, msg?: string): any {

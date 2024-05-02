@@ -1,8 +1,8 @@
-import { log, isDigit, isLetter, parseName, nextLineStart, strToEndOfLine } from './util.js';
+import { log, isDigit, isLetter, parseName, nextLineStart, strToEndOfLine, error, errorbox } from './util.js';
 import { matchKeyword, matchOperator } from './langdef.js';
 
 function debug(...args: any[]) { 
-  //log('LEXER:', ...args); // DEBUG: uncomment to enable debug logging
+  log('LEXER:', ...args); // DEBUG: uncomment to enable debug logging
 }
 
 export type TokenClass =
@@ -21,6 +21,7 @@ export type Token = {
 
 export function pushtoken(tokens: Token[], cls: TokenClass, str: string, start: number, end: number) { tokens.push({ cls: cls, str, posStartEnd: [start, end] }) }
 export function eoftoken(index: number): Token { return { cls: 'eof', str: 'EOF', posStartEnd: [index, index] } }
+export function lexertoken(index: number): Token { return { cls: 'eof', str: 'TODO: take lexer state', posStartEnd: [index, index] } } // TODO:
 export function iseof(token: Token): boolean { return token.cls === 'eof' }
 
 //------------------------------------------------------------------------
@@ -30,8 +31,9 @@ export class Lexer {
   public tokens: Token[] = [];
   private current: number = 0;
   private source: string = "";
-  private lineStart: number[] = new Array<number>(0); //[];
+  private lineStart: number[] = [0];
   private filename: string;
+  private nestedcomments: number[] = []; // start positions of '/' in '/*'
   
   constructor(source: string = "", filename: string) {
     this.source = source;
@@ -44,20 +46,17 @@ export class Lexer {
     return index;
   }
 
-  // Main tokenizer method, tokenize()
+  //**** The main tokenizer loop ***************************************
   private tokenize() {
-    const src = this.source;
-    this.tokens = [];
-    this.lineStart = [0];
-    this.current = 0;
-  
-    //**** The main tokenizer loop ***************************************
+    const src = this.source;  
     let index = 0;
     let lastindex = -1;
     while (index < src.length) {
       debug(`index ${index}: ${src.substring(index, index+42)}`);
       if (index === lastindex) this.error('TODO: buggy lexer, looping in the main tokenizer loop');
       lastindex = index;
+
+      this.current = index; // track current, remember to clear for parser calls!
 
       const char = src[index];
       const nextchar = (index + 1) < src.length ? src[index+1] : '';
@@ -92,7 +91,32 @@ export class Lexer {
         index++;
       }
       //---- Comments ----------------------------------------------------
-      // TODO: nestable block comments /* */
+      else if ((char === '/' && nextchar === '*')) {
+        debug('-> nestable comment block');
+        this.nestedcomments.push(index);
+        index += 2; // skip /*
+        while (this.nestedcomments.length > 0 && index < src.length) {
+            let ch = '';
+            while (index < src.length - 1) {
+                ch = src[index++] + src[index]; // look ahead one character
+                this.current = index;
+    
+                if (ch === '*/') {
+                    this.nestedcomments.pop(); // end of comment
+                    index++; // skip the "/"
+                    break; // exit the inner while-loop
+                } else if (ch === '/*') {
+                    this.nestedcomments.push(index); // new nested comment
+                    index++; // skip the "*"
+                }
+            }
+            debug('--> got out of forward scan loop, @index:', index, ' @src.length:', src.length);
+    
+            if (index >= src.length && this.nestedcomments.length > 0) {
+                this.error(`Hey, you got nestable comment open, nih! Start positions: ${JSON.stringify(this.nestedcomments)}`);
+            }
+        }
+      }
       else if ((char === '/' && nextchar === '/') || (char == ';') || (char === '#' && /\s/.test(nextchar))) {
         debug('-> line comment');
         index = this.startnewline(nextLineStart(src, index));
@@ -140,6 +164,8 @@ export class Lexer {
         this.errorLine('SYNTAX ERROR! char: ' + src[index], index, index+1);
       }
     }
+
+    this.current = 0; // clear for parser calls
   }
 
   public peekToken(lookahead: number = 0): Token {
@@ -235,8 +261,14 @@ export class Lexer {
     throw new Error("Compilation failed.");
   }
 
+  public lexercurrentlines() {
+    return '[[From source code position ' + this.current + '/' + this.source.length + ']] ' + this.source.slice(this.current, this.current+42); // TODO: to end of line? two lines?
+  }
+
   public error(err: string, token?: Token): never {
+    // TODO: this is called by lexer AND parser, might make own functions? Lexer needs to pass more info.
     if(!token) token = this.tokens[this.current];
+    if(!token) { errorbox(this.lexercurrentlines()); error(err); } //token = lexertoken(this.current);
     this.errorLine(err, token.posStartEnd[0], token.posStartEnd[1]);
   }
 }
