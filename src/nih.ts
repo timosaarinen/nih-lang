@@ -4,7 +4,7 @@ import { readFileSync } from 'fs'; // node
 import { dumpast, parseModule } from './parser.js';
 import { glog, glogenable } from './util.js';
 
-glogenable('verbose'); // uncomment to enable verbose mode
+//glogenable('verbose'); // uncomment to enable verbose mode
 
 //------------------------------------------------------------------------
 function loadSourceFromFile(filename: string): string {

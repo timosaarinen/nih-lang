@@ -1,6 +1,6 @@
 import { Lexer, Token, TokenClass, iseof } from './lexer.js';
 import { Ast, nop } from './ast.js';
-import { assert, log, error, fmt } from './util.js';
+import { assert, log, error, fmt, json } from './util.js';
 
 function debug(...args: any[]) { 
   log('PARSER:', ...args); // DEBUG: uncomment to enable debug logging
@@ -159,14 +159,20 @@ function nihexpr(lexer: Lexer): Ast {
 export function parseModule(lexer: Lexer): Ast {
   let c: Ast[] = [];
   let token: Token;
-  while(token = lexer.peekToken(), iseof(token)) {              // while((token = lexer.peekToken()).cls != 'eof') {
-    c.push(token.str === '(' ? sexpr(lexer) : nihexpr(lexer));  // all statements starting with '(' are treated as S-expressions
+  debug('TOP-LEVEL STMTs should start..');
+  while(true) {
+    let token = lexer.peekToken();
+    if (iseof(token)) break;
+    // all statements starting with '(' are treated as S-expressions
+    debug('TOP-LEVEL STMT');
+    c.push(token.str === '(' ? sexpr(lexer) : nihexpr(lexer));
   }
   return { type: 'module',  c: c };
 }
 
 export function dumpast(ast: Ast) {
-  log(`${ast} ${ast.c.forEach((child, index) => dumpast(ast)) }`);
+  const l = (ast: Ast) => log(json(ast));
+  l(ast); ast.c.forEach(child => l(child));
 }
 
 

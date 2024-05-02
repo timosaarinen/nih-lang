@@ -2,7 +2,7 @@ import { log, isDigit, isLetter, parseName, nextLineStart, strToEndOfLine, error
 import { matchKeyword, matchOperator } from './langdef.js';
 
 function debug(...args: any[]) { 
-  log('LEXER:', ...args); // DEBUG: uncomment to enable debug logging
+  //log('LEXER:', ...args); // DEBUG: uncomment to enable debug logging
 }
 
 export type TokenClass =

@@ -70,3 +70,7 @@ export function parseName(src: string, index: number): [string, number, number] 
   const value: string = src.slice(start, index);
   return [value, start, index];
 }
+
+export function json(o: any): string {
+  return JSON.stringify(o);
+}
