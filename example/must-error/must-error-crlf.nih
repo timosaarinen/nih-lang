@@ -1,0 +1,5 @@
+// THIS FILE MUST CAUSE AN ERROR WITH NIH COMPILER: 
+//    .nih files must be in Unix LF format, i.e. must not contain \r character (e.g. Windows CRLF)
+
+# This is a line with CRLF
+Another line with CRLF

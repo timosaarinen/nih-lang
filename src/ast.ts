@@ -54,6 +54,8 @@ export interface Ast {
   num?: number;   // number literal value
   c: Ast[];       // AST node children (e.g. '+' binary op has [expr, expr])
   rtype?: string; // type annotation
+  rdoc?: string;  // (function return)) type documentation
+  doc?: string;   // (function) details documentation
 }
 
 export function nop(): Ast                            { return { type: 'do', c: [] }; }

@@ -2,9 +2,21 @@ export const isLetter = (char: string) => /[a-zA-Z_]/.test(char);
 export const isDigit = (char: string) => /[0-9]/.test(char);
 
 //------------------------------------------------------------------------
-export function fmt(...args: any[]): any {
-  return args.map(arg => typeof arg === 'object' ? JSON.stringify(arg) : String(arg)).join(' ');
+export function fmt(...args: any[]): string {
+  return args.map(arg => {
+    if (Array.isArray(arg)) {
+      // Convert array elements to string and join with a space
+      return arg.join(' ');
+    } else if (typeof arg === 'object') {
+      // Convert object to JSON string
+      return JSON.stringify(arg);
+    } else {
+      // Convert primitive types to string
+      return String(arg);
+    }
+  }).join(' ');
 }
+
 
 export function errorbox(...args: any[]) {
   let text = fmt(args);
@@ -43,21 +55,15 @@ export function strmatch(target: string, source: string, startIndex: number): nu
   return null;
 }
 
-export function stripNewlines(str: string): string {
-  throw new Error("TODO: stripNewLines"); //return str.replace(/\r?\n|\r/g, "");
-}
-
 export function nextLineStart(str: string, index: number): number {
-  while(str[index++] !== '\n' && str[index++] !== '\r') {
+  while(str[index++] !== '\n') {
     if (index >= str.length) return str.length; // eof
   }
-  if (str[index] === '\n' || str[index] === '\r') index++;
   return index;
 }
 
-export function strToEndOfLine(str: string, index: number) {
-  const end = nextLineStart(str, index);
-  while (str[index] == '\r' || str[index] == '\n') index--;
+export function thisLine(str: string, index: number) {
+  const end = nextLineStart(str, index) - 1;
   return str.substring(index, end);
 }
 

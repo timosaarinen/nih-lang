@@ -1,10 +1,16 @@
 #!/usr/bin/env nih
-(let WIDTH 16)
-(let HEIGHT 16)
+(let WIDTH 16)   ; output width in characters
+(let HEIGHT 16)  ; output height in characters
 
-// C comments
-/** THIS DOESN'T WORK IN LEXER /** ALSO MUST BE NESTED OR GO HOME */ */
-# bashy comments
+#  To-the-end-of-line comment ..short. Must have at least one whitespace after '#', otherwise #pragma.
+;  To-the-end-of-line comment ..might also underline that no terminator character in the language?
+// To-the-end-of-line comment ..too many options? Nah, depends on aesthetic preference (and IDE makes it irrelevant anyway).
+/* Nestable block comments /* ..repeat, nested comments, for QoL */ */
+/* xx */
+
+//------------------------------------------------------------------------
+//  Mandelbrot
+//------------------------------------------------------------------------
 (let mandelbrot (fn (plist 
     (param c :vec2) 
     (returns :int (doc "# of iterations, 0 if not in Mandelbrot set"))
@@ -52,6 +58,7 @@
 //  Main
 //------------------------------------------------------------------------
 (call print (call mandelbrot0 0 0)) ; Test the two parameter version (int -> string in print macro)
+(call print '----')
 
 (let rs -2.0)
 (let re 1.0)

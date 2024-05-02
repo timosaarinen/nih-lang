@@ -33,6 +33,7 @@ const keywords = [
   'if', 'inc!',
   'let',
   'pure',
+  'returns',
   'return',
   'set!', 'struct', 'switch',
   'type',

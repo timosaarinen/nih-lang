@@ -26,20 +26,32 @@
                 "name": "comment.line.asm.nih",
                 "match": ";.*"
             },
-             
             {
-                "name": "comment.block.nih",
-                "begin": "/*",
-                "end": "*/",
+                "name":  "comment.block.nih",
+                "begin": "/\\*",
+                "end":   "\\*/",
                 "beginCaptures": {
-                  "0": { "name": "punctuation.comment.begin.nih" }
+                  "0": {
+                    "name": "punctuation.definition.comment.nih"
+                  }
                 },
                 "endCaptures": {
-                  "0": { "name": "punctuation.comment.end.nih" }
-                },
-                "patterns": [
-                  { "include": "#block-comment" }
-                ]
+                  "0": {
+                    "name": "punctuation.definition.comment.nih"
+                  }
+                }
+            },
+            {
+                "name": "comment.block.html.js",
+                "match": "(<!--|-->)",
+                "captures": {
+                  "0": {
+                    "name": "punctuation.definition.comment.html.js"
+                  },
+                  "2": {
+                    "name": "punctuation.definition.comment.html.js"
+                  }
+                }
             }
         ]
     },

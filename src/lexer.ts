@@ -1,8 +1,8 @@
-import { log, isDigit, isLetter, parseName, nextLineStart, strToEndOfLine, error, errorbox } from './util.js';
+import { strmatch, log, isDigit, isLetter, parseName, nextLineStart, thisLine, error, errorbox, json } from './util.js';
 import { matchKeyword, matchOperator } from './langdef.js';
 
 function debug(...args: any[]) { 
-  //log('LEXER:', ...args); // DEBUG: uncomment to enable debug logging
+  log('LEXER:', ...args); // DEBUG: uncomment to enable debug logging
 }
 
 export type TokenClass =
@@ -31,19 +31,35 @@ export class Lexer {
   public tokens: Token[] = [];
   private current: number = 0;
   private source: string = "";
-  private lineStart: number[] = [0];
+  private linestart: number[] = [0];
   private filename: string;
   private nestedcomments: number[] = []; // start positions of '/' in '/*'
   
   constructor(source: string = "", filename: string) {
+    if (source.includes('\r')) error(
+`Invalid Carriage Return ('\\r') character found in the ${filename} - .nih files must be in Unix LF format.
+- use Visual Studio Code, see the bottom/status bar.. should read LF, not CRLF.
+- if not, convert to LF by clicking the CRLF and selecting LF.`);
+    
     this.source = source;
     this.filename = filename;
     this.tokenize();
   }
 
+  private sourceforward(index: number): string {
+    return this.source.slice(index, index + 42); // TODO: couple or three lines?
+  }
+
   private startnewline(index: number): number {
-    this.lineStart.push(index);
+    this.linestart.push(index);
+    console.log(this.filename + ':' + this.linestart.length + ': ' + this.sourceforward(index))
     return index;
+  }
+
+  private skip(matchstr: string, index: number): number {
+    let end = strmatch(matchstr, this.source, index);
+    if (!end) this.error("Expected: '" + matchstr + "', got: '" + this.sourceforward(index) + "'");
+    return end;
   }
 
   //**** The main tokenizer loop ***************************************
@@ -64,8 +80,8 @@ export class Lexer {
 
       //---- Newline -----------------------------------------------------
       if (char === '\n') { 
-        debug('-> newline'); 
-        index = this.startnewline(index+1); 
+        console.log('-> newline'); // TODO: debug('-> newline');
+        index = this.startnewline(nextLineStart(src, index));
       }
       //---- Number literals ---------------------------------------------
       else if (isDigit(char)) {
@@ -81,37 +97,58 @@ export class Lexer {
       //---- String literals ---------------------------------------------
       // TODO: handle string interpolation in parser?
       else if ("'\"`".includes(char)) {
-        debug('-> string literal');
-        let start = ++index;
-        while (index < src.length && src[index] !== char) { 
-          index++;
+        const strlitchar = char; // single-, double-quote or backtick
+        let value, start;
+        if (src[index+1] === '"' && src[index+2] === '"') {
+          debug('-> multi-line string literal');
+          index = this.skip('"""', index);
+          start = index;
+          while (index < src.length && src[index] !== '"') {
+            if (src[index] == '\n') {
+              index = this.startnewline(nextLineStart(src, index));
+            } else {
+              index++;
+            }
+          }
+          value = src.slice(start, index);
+          index = this.skip('"""', index);
+        } else {
+          debug("-> string literal with '" + strlitchar + "'");
+          index = this.skip(strlitchar, index);
+          start = index;
+          while (index < src.length && src[index] !== strlitchar) { 
+            index++;
+          }
+          value = src.slice(start, index);
+          index = this.skip(strlitchar, index);
         }
-        const value = src.slice(start, index);
-        pushtoken(this.tokens, 'strlit', value, start - 1, index + 1); 
-        index++;
+        pushtoken(this.tokens, 'strlit', value, start, index); 
       }
       //---- Comments ----------------------------------------------------
       else if ((char === '/' && nextchar === '*')) {
         debug('-> nestable comment block');
         this.nestedcomments.push(index);
-        index += 2; // skip /*
+        index = this.skip('/*', index);
         while (this.nestedcomments.length > 0 && index < src.length) {
             let ch = '';
             while (index < src.length - 1) {
                 ch = src[index++] + src[index]; // look ahead one character
                 this.current = index;
     
-                if (ch === '*/') {
+                if (ch === '\n') {
+                  index = this.startnewline(nextLineStart(src, index));
+                } else if (ch === '*/') {
                     this.nestedcomments.pop(); // end of comment
-                    index++; // skip the "/"
+                    index = this.skip('*/', index-1);
                     break; // exit the inner while-loop
                 } else if (ch === '/*') {
                     this.nestedcomments.push(index); // new nested comment
-                    index++; // skip the "*"
+                    index = this.skip('/*', index-1);
                 }
             }
-            debug('--> got out of forward scan loop, @index:', index, ' @src.length:', src.length);
-    
+            console.log('--> got out of nested forward scan loop for /* */, @index:', index, ' @src.length:', src.length);
+            console.log(json(this.getLineAndColumn(index)));
+
             if (index >= src.length && this.nestedcomments.length > 0) {
                 this.error(`Hey, you got nestable comment open, nih! Start positions: ${JSON.stringify(this.nestedcomments)}`);
             }
@@ -136,7 +173,7 @@ export class Lexer {
       }
       //---- #pragma -----------------------------------------------------
       else if (char == '#') {
-        debug('#pragma: ', strToEndOfLine(src, index));
+        debug('#pragma: ', thisLine(src, index));
         index = this.startnewline(nextLineStart(src, index));
       }
       //---- Identifiers -------------------------------------------------
@@ -155,8 +192,8 @@ export class Lexer {
       }
       //---- Whitespace --------------------------------------------------
       // NOTE: meaningful whitespace, so don't keep this as first (don't need to be last either, but.. good enough)
-      else if (/\s/.test(char)) {
-        debug('-> whitespace');
+      else if (char == ' ' || char == '\t') {
+        //console.log('-> whitespace', index);
         index++; 
       } 
       //---- If the execution went this far in the loop scope, it's time for....
@@ -198,11 +235,11 @@ export class Lexer {
     return this.current;
   }
 
-  public addToSource(line: string, pos?: number) {
+  public addToSource(appendcode: string, pos?: number) {
     if(pos) {
       this.source.slice(0, pos);
     }
-    this.source += line;
+    this.source += appendcode;
     this.tokenize();
   }
 
@@ -213,20 +250,21 @@ export class Lexer {
   }
 
   public getLineAndColumn(position: number): { line: number, column: number } {
-    for (let i = 0; i < this.lineStart.length; i++) {
+    for (let i = 0; i < this.linestart.length; i++) {
       // Check if the position is in the current line
-      if (this.lineStart[i] > position) {
+      if (this.linestart[i] > position) {
         // Position is in the previous line
         const line = i;
-        const column = position - this.lineStart[i - 1];
+        const column = position - this.linestart[i - 1];
+        console.log('getLineAndColumn: line:', line, 'column:', column); // TODO: DEBUG:
         return { line, column };
       }
     }
 
     // If the position is in the last line
-    if (position >= this.lineStart[this.lineStart.length - 1]) {
-      const line = this.lineStart.length;
-      const column = position - this.lineStart[line - 1];
+    if (position >= this.linestart[this.linestart.length - 1]) {
+      const line = this.linestart.length;
+      const column = position - this.linestart[line - 1];
       return { line, column };
     }
 
@@ -234,19 +272,12 @@ export class Lexer {
     return { line: 0, column: 0 };
   }
 
-  public line(pos: number)   : string { return this.getLineAndColumn(pos).line.toString(); }
-  public column(pos: number) : string { return this.getLineAndColumn(pos).column.toString(); }
-
-  public infoPrefix() {
-    return `[${this.filename}:${this.line(this.current)}:${this.column(this.current)}]`
-  }
-
   public errorLine(err: string, start: number, end: number): never {
     const errorMarkerChar = "^";
     const { line, column } = this.getLineAndColumn(start);
-    const lineStartIndex = this.lineStart[line - 1];
-    const lineEndIndex = this.lineStart[line] || this.source.length;
-    const errorLine = this.source.substring(lineStartIndex, lineEndIndex);
+    const linestartIndex = this.linestart[line - 1];
+    const lineEndIndex = this.linestart[line] || this.source.length;
+    const errorLine = this.source.substring(linestartIndex, lineEndIndex);
 
     let highlightLine = "".padStart(column - 1) + errorMarkerChar.repeat(end - start);   
     if(end === start) {
@@ -254,8 +285,8 @@ export class Lexer {
     }
 
     console.log("*************************** NIH! *****************************************");
-    console.log(`ERROR:${this.filename}:${this.line(this.current)}:${this.column(this.current)}: ${err}:`);
-    console.log(errorLine); //console.log(stripNewlines(errorLine));
+    console.log(`ERROR: ${this.filename}:${line}:${column}: ${err}:`);
+    console.log(errorLine);
     console.log(highlightLine);
 
     throw new Error("Compilation failed.");

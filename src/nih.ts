@@ -21,9 +21,9 @@ const filename = process.argv[2] // e.g. 'example/mandelbrot.nih' or 'example/hi
 glog('verbose', `Reading source file: ${filename}`)
 const sourcecode = loadSourceFromFile(filename)
 
-glog('verbose', "---- Source code >>------------------------------------------")
-glog('verbose', sourcecode)
-glog('verbose', "----<< Source code-------------------------------------------\n")
+// glog('verbose', "---- Source code >>------------------------------------------")
+// glog('verbose', sourcecode)
+// glog('verbose', "----<< Source code-------------------------------------------\n")
 
 let lexer = new Lexer(sourcecode, filename)
 

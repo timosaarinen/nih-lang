@@ -22,7 +22,7 @@ function atom(lexer: Lexer, expected?: TokenClass): Ast {
     case 'numlit':  return { type: 'numlit', str: t.str, num: parseFloat(t.str), c:[] };
     case 'strlit':  return { type: 'strlit', str: t.str, c: [] };
     case 'ident':   return { type: 'ident', name: t.str, c: [] };
-    default:        return lexer.error('Expected number literal, string literal or identifier.', t);
+    default:        return lexer.error('Expected number literal, string literal or identifier, got ' + json(t), t);
   }
 }
 function rest(lexer: Lexer): Ast[] {
@@ -48,6 +48,8 @@ function plist(lexer: Lexer): Ast {
     switch (token.str) {
       case 'param': {
         const param = sexpr(lexer);
+        const typetoken: Token|null = lexer.eatTokenIfType('type');
+        if (typetoken) param.rtype = typetoken.str;
         fn.c.push(param);
         debug('Function param:', json(param));
         break;
@@ -55,10 +57,26 @@ function plist(lexer: Lexer): Ast {
       case 'returns': {
         let rettype = lexer.eatToken('type').str;
         fn.rtype = rettype;
-        debug('Hey, someone actually typed this function, got returns: ${rettype}!');
+        const subastparen: Token|null = lexer.eatTokenIfType('kw', '(');
+        if (subastparen) {
+          lexer.eatToken('kw', 'doc');
+          const retdoctoken = lexer.eatToken('strlit');
+          fn.rdoc = retdoctoken.str;
+          lexer.eatToken('kw', ')');
+        }
+        debug('Hey, someone actually typed this function, got returns: ' + json(rettype));
         break;
       }
+      case 'doc': { // function details doc
+        const funcdoctoken = lexer.eatToken('strlit');
+        fn.doc = funcdoctoken.str;
+        break;
+      }
+      default: {
+        lexer.error("'plist' expects 'param' or 'returns' children, got: " + json(token), token);
+      }
     }
+    lexer.eatToken('kw', ')');
   }
   return fn; // 'plist' param* [:type]
 }
