@@ -26,10 +26,20 @@
                 "name": "comment.line.asm.nih",
                 "match": ";.*"
             },
+             
             {
                 "name": "comment.block.nih",
-                "begin": "/\\*",
-                "end": "\\*/"
+                "begin": "/*",
+                "end": "*/",
+                "beginCaptures": {
+                  "0": { "name": "punctuation.comment.begin.nih" }
+                },
+                "endCaptures": {
+                  "0": { "name": "punctuation.comment.end.nih" }
+                },
+                "patterns": [
+                  { "include": "#block-comment" }
+                ]
             }
         ]
     },

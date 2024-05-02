@@ -43,16 +43,21 @@ function plist(lexer: Lexer): Ast {
   let fn: Ast = { type: 'fn', c: []} ;
   let token: Token;
   while ((token = lexer.peekToken()).str !== ')') {
-    if (token.str !== '(') {
-      // must be function return :type.. NOTE: actually accepting it before (param) -> the order doesn't matter.. but matters in params! (kinda)
-      let rettype = lexer.eatTokenIfType('type');
-      debug('Hey, someone actually typed this function, got returns: ${rettype}!');
-      fn.rtype = token.str;
-    } else {
-      // ok, parameter list node (not actual "args".. weird that this becomes such a problem to remember what is what in function call context..)
-      const param = sexpr(lexer);
-      debug(param);
-      fn.c.push(param);
+    lexer.eatToken('kw', '(');
+    token = lexer.eatToken('kw');
+    switch (token.str) {
+      case 'param': {
+        const param = sexpr(lexer);
+        fn.c.push(param);
+        debug('Function param:', json(param));
+        break;
+      }
+      case 'returns': {
+        let rettype = lexer.eatToken('type').str;
+        fn.rtype = rettype;
+        debug('Hey, someone actually typed this function, got returns: ${rettype}!');
+        break;
+      }
     }
   }
   return fn; // 'plist' param* [:type]
