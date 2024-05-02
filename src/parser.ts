@@ -1,6 +1,6 @@
-import { Lexer, Token, TokenClass, iseof } from './lexer';
-import { Ast, AstT, nop } from './ast';
-import { assert, log, error, fmt } from './util';
+import { Lexer, Token, TokenClass, iseof } from './lexer.js';
+import { Ast, nop } from './ast.js';
+import { assert, log, error, fmt } from './util.js';
 
 function debug(...args: any[]) { 
   log('PARSER:', ...args); // DEBUG: uncomment to enable debug logging
@@ -15,7 +15,7 @@ function debug(...args: any[]) {
 //    - lists have N children, form depends on the AstT head
 //
 //------------------------------------------------------------------------
-function sexprAtom(lexer: Lexer, expected?: TokenClass): Ast {
+function atom(lexer: Lexer, expected?: TokenClass): Ast {
   const t = lexer.eatToken();
   if (expected && expected !== t.cls) lexer.error(`Expected ${expected}, got ${t.cls}`, t);
   switch (t.cls) {
@@ -57,62 +57,59 @@ function plist(lexer: Lexer): Ast {
   }
   return fn; // 'plist' param* [:type]
 }
-function sexprListAst(lexer: Lexer, head: string): Ast {
+function listAst(lexer: Lexer, head: string): Ast {
   // - outer parens and the head is eaten by caller, parse the inner rest/tail part (foo 2 (bar 4)) -> 2 (bar 4)
-  // - for the next elements, can call sexpr() for any, or sexprAtom() and sexprList() for explicit atom/list expected
+  // - for the next elements, can call sexpr() for any, or atom() and list() for explicit atom/list expected
   switch (head) {
-    case 'module':    return { type: 'module',  c: [] };                                                      // 'module'
-    case 'doc':       return { type: 'doc',     c: [sexprAtom(lexer, 'strlit')] };                            // 'doc' strlit
-    case 'let':       return { type: 'let',     c: [sexprAtom(lexer, 'ident'), sexpr(lexer)] };               // 'let' ident expr
-    case 'set!':      return { type: 'set!',    c: [sexprAtom(lexer, 'ident'), sexpr(lexer)] };               // 'set!' ident expr
-    case 'inc!':      return { type: 'inc!',    c: [sexprAtom(lexer, 'ident')] };                             // 'inc!' ident
-    case 'forlt':     return { type: 'forlt',   c: [sexprAtom(lexer, 'ident'), sexpr(lexer), sexpr(lexer)] }; // 'forlt' ident num-expr num-expr
-    case 'do-while':  return { type: 'inc!',    c: [sexprAtom(lexer, 'ident')] };                             // TODO: 'do-while' (expr*) cond-expr
-    case 'fn':        return { type: 'fn',      c: [sexprList(lexer), ...rest(lexer)] };                 // TODO: 'fn' plist body-expr*
-    case 'plist':     return plist(lexer); //return { type: 'plist',   c: [...rest()]}
+    case 'module':    return { type: 'module',  c: [] };                                      // 'module'
+    case 'doc':       return { type: 'doc',     c: [atom(lexer, 'strlit')] };                 // 'doc' strlit
+    case 'let':       return { type: 'let',     c: [atom(lexer, 'ident'), sexpr(lexer)] };    // 'let' ident expr
+    case 'set!':      return { type: 'set!',    c: [atom(lexer, 'ident'), sexpr(lexer)] };    // 'set!' ident expr
+    case 'inc!':      return { type: 'inc!',    c: [atom(lexer, 'ident')] };                  // 'inc!' ident
+    case 'for':       return { type: 'for',     c: [list(lexer), ...rest(lexer)] };           // 'for' (for-param*) body-expr*
+    case 'do-while':  return { type: 'inc!',    c: [atom(lexer, 'ident')] };                  // TODO: 'do-while' (expr*) cond-expr
+    case 'fn':        return { type: 'fn',      c: [list(lexer), ...rest(lexer)] };           // TODO: 'fn' plist body-expr*
+    case 'plist':     return plist(lexer);
     case 'param':     return param(lexer);
-    case 'return':    return { type: 'return',  c: [sexpr(lexer)] };                                          // 'return' [expr] - TODO: optional retvalue (check function signature)
-    case 'cast':      return { type: 'cast',    c: [sexpr(lexer), sexprAtom(lexer, 'type')] };                // 'cast' expr :type
-    case 'call':      return { type: 'call',    c: [sexprAtom(lexer, 'ident'), ...rest(lexer)] };             // 'call' ident expr*
-    case 'do':        return { type: 'do',      c: [...rest(lexer)] };                                        // 'do' stmt-expr*
-    case '+':         return { type: '+',       c: [sexpr(lexer), sexpr(lexer)] };                            // '+' expr expr
-    case '-':         return { type: '-',       c: [sexpr(lexer), sexpr(lexer)] };                            // '-' expr expr
-    case '*':         return { type: '*',       c: [sexpr(lexer), sexpr(lexer)] };                            // '*' expr expr
-    case '/':         return { type: '/',       c: [sexpr(lexer), sexpr(lexer)] };                            // '/' expr expr
-    case '^':         return { type: '^',       c: [sexpr(lexer), sexpr(lexer)] };                            // '^' expr expr
-    case '==':        return { type: '==',      c: [sexpr(lexer), sexpr(lexer)] };                            // '==' expr expr
-    case '!=':        return { type: '!=',      c: [sexpr(lexer), sexpr(lexer)] };                            // '!=' expr expr
-    case '<':         return { type: '<',       c: [sexpr(lexer), sexpr(lexer)] };                            // '<'  expr expr
-    case '<=':        return { type: '<=',      c: [sexpr(lexer), sexpr(lexer)] };                            // '<=' expr expr
-    case '>':         return { type: '>',       c: [sexpr(lexer), sexpr(lexer)] };                            // '>'  expr expr
-    case '>=':        return { type: '>=',      c: [sexpr(lexer), sexpr(lexer)] };                            // '>=' expr expr
-    case 'OR':        return { type: 'OR',      c: [sexpr(lexer), sexpr(lexer)] };                            // 'OR' expr expr
-    case 'AND':       return { type: 'AND',     c: [sexpr(lexer), sexpr(lexer)] };                            // 'AND' expr expr
-    case 'XOR':       return { type: 'XOR',     c: [sexpr(lexer), sexpr(lexer)] };                            // 'XOR' expr expr
-    case 'NOT':       return { type: 'NOT',     c: [sexpr(lexer), sexpr(lexer)] };                            // 'NOT' expr expr
-    case '!':         return { type: '!',       c: [sexpr(lexer), sexpr(lexer)] };                            // '|' expr expr
-    case '&&':        return { type: '&&',      c: [sexpr(lexer), sexpr(lexer)] };                            // '&&' expr expr
-    case '||':        return { type: '||',      c: [sexpr(lexer), sexpr(lexer)] };                            // '||' expr expr
-    case 'unary-minus': 
-      return { type: 'unary-minus', c: [sexpr(lexer)] };
-    case 'TODO:': // TODO: do something with this marker?
-    default: 
-      lexer.error(`TODO: tell the laazyy compiler developer to implement this: ${head}, nih!`); return { type: 'TODO:', c: [] };
+    //case 'for-param': // TODO: ((let y (range 0 HEIGHT)) (let x (range 0 WIDTH))) 
+    case 'return':    return { type: 'return',  c: [sexpr(lexer)] };                          // 'return' [expr] - TODO: optional retvalue (check function signature)
+    case 'cast':      return { type: 'cast',    c: [sexpr(lexer), atom(lexer, 'type')] };     // 'cast' expr :type
+    case 'call':      return { type: 'call',    c: [atom(lexer, 'ident'), ...rest(lexer)] };  // 'call' ident expr*
+    case 'do':        return { type: 'do',      c: [...rest(lexer)] };                        // 'do' stmt-expr*
+    case '+':         return { type: '+',       c: [sexpr(lexer), sexpr(lexer)] };            // '+' expr expr
+    case '-':         return { type: '-',       c: [sexpr(lexer), sexpr(lexer)] };            // '-' expr expr
+    case '*':         return { type: '*',       c: [sexpr(lexer), sexpr(lexer)] };            // '*' expr expr
+    case '/':         return { type: '/',       c: [sexpr(lexer), sexpr(lexer)] };            // '/' expr expr
+    case '==':        return { type: '==',      c: [sexpr(lexer), sexpr(lexer)] };            // '==' expr expr
+    case '!=':        return { type: '!=',      c: [sexpr(lexer), sexpr(lexer)] };            // '!=' expr expr
+    case '<':         return { type: '<',       c: [sexpr(lexer), sexpr(lexer)] };            // '<'  expr expr
+    case '<=':        return { type: '<=',      c: [sexpr(lexer), sexpr(lexer)] };            // '<=' expr expr
+    case '>':         return { type: '>',       c: [sexpr(lexer), sexpr(lexer)] };            // '>'  expr expr
+    case '>=':        return { type: '>=',      c: [sexpr(lexer), sexpr(lexer)] };            // '>=' expr expr
+    case '^':         return { type: '^',       c: [sexpr(lexer), sexpr(lexer)] };            // '^' expr expr -> bitwise OR (int) or pow op
+    case '|':         return { type: '|',       c: [sexpr(lexer), sexpr(lexer)] };            // 'OR' expr expr
+    case '&':         return { type: '|',       c: [sexpr(lexer), sexpr(lexer)] };            // 'AND' expr expr
+    case '~':         return { type: '~',       c: [sexpr(lexer), sexpr(lexer)] };            // 'NOT' expr expr
+    case '!':         return { type: '!',       c: [sexpr(lexer), sexpr(lexer)] };            // '|' expr expr
+    case '&&':        return { type: '&&',      c: [sexpr(lexer), sexpr(lexer)] };            // '&&' expr expr
+    case '||':        return { type: '||',      c: [sexpr(lexer), sexpr(lexer)] };            // '||' expr expr
+    case 'negate':    return { type: 'negate',  c: [sexpr(lexer)] };                          // 'negate' expr (NOTE: unary minus '-')
+    default:          lexer.error(`TODO: tell the laazyy compiler developer to implement this: ${head}, nih!`); return { type: 'TODO:', c: [] };
   }
 }
-function sexprList(lexer: Lexer, op?: string): Ast {
+function list(lexer: Lexer, op?: string): Ast {
   // e.g. (foo 1 2 (bar 42))
   lexer.eatToken('kw', '(');
   assert(lexer.peekToken().cls !== 'eof', "Expected S-expression list to continue, got eof"); // TODO: tell the opening paren in error
   assert(lexer.peekToken().str !== ')', "No empty list () allowed."); // TODO: allow () ?
   const head = lexer.eatToken();
-  const ast = sexprListAst(lexer, head.str); // TODO: no forcecast, map?
+  const ast = listAst(lexer, head.str); // TODO: no forcecast, map?
   lexer.eatToken('kw', ')');
   return ast;
 }
 function sexpr(lexer: Lexer): Ast {
   debug('sexpr:', lexer.peekToken());
-  return (lexer.peekToken().str === '(') ? sexprList(lexer) : sexprAtom(lexer);
+  return (lexer.peekToken().str === '(') ? list(lexer) : atom(lexer);
 }
 
 //------------------------------------------------------------------------
@@ -221,7 +218,7 @@ export function parseModule(lexer: Lexer): Ast {
 //   }
 //   const t = lexer.eatTokenIfType('op', ':');
 //   const rtype = (t) ? lexer.eatToken().value : null; // consume optional return type
-//   const body = sexprList(lexer);
+//   const body = list(lexer);
 //   return def(funcname, func(params, body, rtype), rtype);
 // }
 

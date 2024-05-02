@@ -1,6 +1,6 @@
-import { emitjs } from './emitjs';
-import { Lexer } from './lexer';
-import { parseModule } from './parser';
+import { emitjs } from './emitjs.js';
+import { Lexer } from './lexer.js';
+import { parseModule } from './parser.js';
 
 export function compileAndRun(sourcecode: string, filename: string) {
   let lexer   = new Lexer(sourcecode, filename);

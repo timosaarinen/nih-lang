@@ -1,12 +1,7 @@
-// NOTE: 
-//   The order matters!
-//   - Parsing checks the more specialized cases first, for example ' + ' vs '+'
+// NOTE: The order matters! More specialized cases first, for example ' + ' vs '+'
 //------------------------------------------------------------------------
 //  Operators
 //------------------------------------------------------------------------
-// NOTE: unsigned left shift is same for signed/unsigned, but keep own operator for clarity
-// TODO: add/sub/mul/div ' + ', ' - ', ' * ', ' / ' must have ws around, make a good error for that..
-// TODO: integer divide? Or just cast, clearer?
 const operators = [                                                        // Operator:
   '<', '<=', '>', '>=', '==', '!=',                                        //  relational
   '+=', '-=', '*=', '/=', '%=', '**=', '|>=', '=',                         //  assignment

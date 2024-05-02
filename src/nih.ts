@@ -1,8 +1,8 @@
-import { emitjs } from './emitjs';
-import { Lexer } from './lexer';
+import { emitjs } from './emitjs.js';
+import { Lexer } from './lexer.js';
 import { readFileSync } from 'fs'; // node
-import { parseModule } from './parser';
-import { glog, glogenable } from './util';
+import { parseModule } from './parser.js';
+import { glog, glogenable } from './util.js';
 
 glogenable('verbose'); // uncomment to enable verbose mode
 
@@ -36,9 +36,7 @@ glog('verbose', "----<< Tokens -----------------------------------------------\n
 let ast = parseModule(lexer);
 
 glog('verbose', "---- Abstract Syntax Tree (AST) >>---------------------------")
-for (let n=0; n < lexer.tokens.length; ++n) {
-  glog('verbose', JSON.stringify(lexer.tokens[n]));
-}
+//debugdump(ast);
 glog('verbose', "----<< Abstract Syntax Tree (AST) ---------------------------\n")
 
 let jscode = emitjs(ast)
@@ -47,6 +45,7 @@ glog('verbose', "---- JS code >>----------------------------------------------\n
 glog('verbose', jscode);
 glog('verbose', "----<< JS code ----------------------------------------------\n")
 
-glog('verbose', "---- Executing JS code >>------------------------------------\n")
+//glog('verbose', "---- Executing JS code >>------------------------------------\n")
+//eval(jscode)
 
-eval(jscode)
+console.log("yaya")

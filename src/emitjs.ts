@@ -1,15 +1,16 @@
-import { Ast, getident } from './ast';
-import { error } from './util';
+import { Ast, getident } from './ast.js';
+import { error } from './util.js';
 
 export function emitjs(list: Ast): string {
   return prefixJs + emit(list);
 }
 
  // TODO: don't call console.log directly
-const prefixJs = `
-//--- NIH system code -------------------
+const prefixJs = 
+`//--- NIH system code -------------------
 function nih_printchars(s)  { console.log(s); }
-function nih_printlf(s)     { console.log('\n'); }
+function nih_printlf(s)     { console.log(''); }
+function nih_print(s)       { console.log(''); } // TODO: 'print' == NIH macro
 
 //--- User compiled code-----------------
 `;

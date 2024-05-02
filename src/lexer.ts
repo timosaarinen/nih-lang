@@ -1,8 +1,8 @@
-import { log, isDigit, isLetter, parseName, nextLineStart, strToEndOfLine, stripNewlines, strmatch } from './util';
-import { isKeyword, matchKeyword, matchOperator } from './langdef';
+import { log, isDigit, isLetter, parseName, nextLineStart, strToEndOfLine } from './util.js';
+import { matchKeyword, matchOperator } from './langdef.js';
 
 function debug(...args: any[]) { 
-  log('LEXER:', ...args); // DEBUG: uncomment to enable debug logging
+  //log('LEXER:', ...args); // DEBUG: uncomment to enable debug logging
 }
 
 export type TokenClass =

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Syntax brainstorming</title>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        body {
+            background-color: #000;
+            color: #d4d4d4;
+            font-family: Roboto, sans-serif;
+            font-size: 24px;
+            margin: 0px;
+            margin-left: 16px;
+            padding: 0px;
+        }
+        code {
+            font-family: Roboto, monospace;
+            background-color: #000;
+            border-left: 3px solid #007acc;
+            color: #9CDCFE;
+            display: block;
+            padding: 0px;
+            margin: 8px;
+            white-space: pre-wrap; /* Maintains whitespace formatting */
+            word-wrap: break-word; /* Prevents long lines from breaking layout */
+            line-height: 1.0;
+        }
+        .equation {
+          font-size: 3.0rem;
+        }
+        .arrow { color: #ce9178; }
+        .type { color: #4EC9B0; }
+        .literal { color: #FFF; }
+        .comment { color: #080; font-size: 0.9rem; }
+        .keyword { color: #C586C0; font-weight: bold; }
+        .predicate { color: #FA0; }
+        .function { color: #F0F; }
+    </style>
+</head>
+<body>
+    <h3>Syntax prototyping</h3>
+    <code>
+      <span class="keyword">int</span> foo(v)
+      &nbsp;&nbsp;v is <span class="type">int</span>    <span class="arrow">→</span> v
+      &nbsp;&nbsp;v is <span class="type">string</span> <span class="arrow">→</span> v.toint()
+    </code>
+    <code>
+      <span class="keyword">fun</span> foo(v) <span class="arrow">→</span> <span class="type">int</span>
+      &nbsp;&nbsp;v is <span class="type">int</span>    <span class="arrow">→</span> v
+      &nbsp;&nbsp;v is <span class="type">string</span> <span class="arrow">→</span> v.toint()
+    </code>
+
+    <code>
+      <span class="keyword">if</span> x < 42 print "Still ways to go, keep it up"
+      <span class="keyword">if</span> x < 42 x++, x++, x++ <span class="comment">// No terminator ; as reserved for comments, but can use dot for continuation of statement</span>
+    </code>
+    Maybe better to have that ':' after if for one-liners at least? UPDATE: nope, looks worse.
+    <code>
+      <span class="keyword">if</span> x < 42: print "Still ways to go, keep it up"
+      <span class="keyword">if</span> x < 42: x++, x++, x++ <span class="comment">// No terminator ; as reserved for comments, but can use dot for continuation of statement</span>
+    </code>
+    We can syntax color the predicate for clarity:
+    <code>
+      <span class="keyword">if</span> <span class="predicate">x < 42</span> <span class="function">print</span> <span class="literal">"Still ways to go, keep it up"</span>
+      <span class="keyword">if</span> <span class="predicate">x < 42</span> x++, x++, x++ <span class="comment">// No terminator ; as reserved for comments, but can use dot for continuation of statement</span>
+      <span class="keyword">if</span> <span class="predicate">x < 42</span>
+      &nbsp;&nbsp;x++
+      &nbsp;&nbsp;x++
+      &nbsp;&nbsp;x++
+    </code>
+    <div class="equation">
+      x = \(a + \frac{b}{c \times d}\)
+    </div>
+
+</body>
+</html>

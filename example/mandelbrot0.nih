@@ -26,18 +26,13 @@
           escape to infinity, and the point c is not in the Mandelbrot set. The number of iterations before this escape is what
           we typically visualize in Mandelbrot set images.""")))
 
-
 //------------------------------------------------------------------------
 //  Mandelbrot with no vector types
 //------------------------------------------------------------------------
 (let mandelbrot0 (fn (plist 
     (param cx :float) 
     (param cy :float) 
-    (returns :int (doc "# of iterations, 0 if not in Mandelbrot set"))
-    (doc """In the Mandelbrot set, for each point c = c_x + c_y<i>, iterate function Z_n+1 = z^2_n + c starting from z_0 = 0 and
-            determine whether the sequence remains bounded. If the magnitude of Z_n exceeds 2 at any iteration, the sequence will
-            escape to infinity, and the point c is not in the Mandelbrot set. The number of iterations before this escape is what
-            we typically visualize in Mandelbrot set images."""))
+    (returns :int (doc "# of iterations, 0 if not in Mandelbrot set")))
   (let maxiters 80)
   (set! zx 0)
   (set! zy 0)
@@ -54,40 +49,20 @@
   (return n)))
 
 //------------------------------------------------------------------------
-//  Mandelbrot auto-documented
-//------------------------------------------------------------------------
-(let mandelbrot-explained-more (fn (plist 
-    (param c :vec2) 
-    (returns :int (doc "# of iterations, 0 if not in the Mandelbrot set"))
-    (doc """In the Mandelbrot set, for each point c = c_x + c_y<i>, iterate function Z_n+1 = z^2_n + c starting from z_0 = 0 and
-            determine whether the sequence remains bounded. If the magnitude of Z_n exceeds 2 at any iteration, the sequence will
-            escape to infinity, and the point c is not in the Mandelbrot set. The number of iterations before this escape is what
-            we typically visualize in Mandelbrot set images."""))
-  (let maxiters 99)                                           ; Max iterations set to 99
-  (set! z (vec2 0 0))                                         ; Initialize z as a 2D vector (0,0)
-  (set! n 0)                                                  ; Initialize iteration counter n to 0
-  (do-while (                                                 ; Begin do-while loop
-    (let p (vec2 (- (^ z.x 2) (^ z.y 2)) (* -2 (* z.x z.y)))) ; Calculate p as z^2 (real and imaginary parts)
-    (set! z (+ p c))                                          ; Update z to z^2 + c
-    (let d (call length z))                                   ; Calculate the magnitude of z
-    (inc! n)                                                  ; Increment the iteration counter
-    (if (> d 2) (return 0))                                   ; If magnitude > 2, return 0 indicating escape
-  ) (< n maxiters))                                           ; Continue while n is less than max iterations
-  (return n)))                                                ; Return the iteration count if no escape
-
-
-//------------------------------------------------------------------------
 //  Main
 //------------------------------------------------------------------------
+(call print (call mandelbrot0 0 0)) ; Test the two parameter version (int -> string in print macro)
+
 (let rs -2.0)
 (let re 1.0)
 (let is -1.0)
 (let ie 1.0)
 
-(forlt i 0 WIDTH
-  (forlt j 0 HEIGHT
-    (let cx (+ rs (* (/ i (cast WIDTH :float)) (- re rs))))
-    (let cy (+ is (* (/ j (cast HEIGHT :float)) (- ie is))))
-    (let m (call mandelbrot cx cy))
+(for ((let y (range 0 HEIGHT))    ; NOTE: order matters, y is outer loop here
+      (let x (range 0 WIDTH)))    ; Ranges have non-inclusive end
+  (fn (plist (param y) (param x)) ; TODO: useful blocks-as-closures uniformity or useless middle step?
+    (let c (vec2 (+ rs (* (/ x (cast WIDTH :float)) (- re rs)))
+                 (+ is (* (/ y (cast HEIGHT :float)) (- ie is)))))
+    (let m (call mandelbrot c))
     (call printchars (? (> m 0.0) '*' ' '))
     (call printlf)))

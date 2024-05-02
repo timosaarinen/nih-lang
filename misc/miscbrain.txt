@@ -1,0 +1,37 @@
+*** (for-lt x 0 10 bodyexpr*) is no good.
+- make a generic for, start block, cond, step.. like in C?
+  - (for (setupwhilestep (set! x 0) (x < 10) (inc! x)) )
+  ->  (set! x 0)
+      (while x < 0)
+        ..body...
+        (!inc x)
+        - C 'for' is syntactic sugar for above
+- but C for doesn't give much what cannot be written with while, so not useful?
+- Racket: https://docs.racket-lang.org/reference/for.html
+    (for ([i '(1 2 3)] #:do [(define neg-i (* i -1))] [j (list neg-i 0 i)])
+        (display (list j)))
+- for in range
+  - use case: write to every XY.. two loops
+  - always non-inclusive end, get rid of 'for-lt's
+  - for y=0..256, x=0..256 do
+    - loops in order, so first Y=0 and x=0..256, Y=1 and x=0..256
+  - use function closures!
+    - for y=0..256, x=0..256 do f(x,y) ?
+    - (for ((y 0 256) (x 0 256)) (fn (x y) ...)
+    - simplifies?
+
+- no 'alias', just use 'let': print = nih.system.print
+- remove that ':' from types when lexer in a better shape, looks weird!
+- no <T> template syntax, just pass types as params - actually like in Zig: 
+    list = std.Array(u32); // capital Array is constructor syntax? but we have vec3(0).. well, types are mostly Capital
+    list = nih.array(u32, 16)
+    n    = u32(0)               // constructor syntax
+    list = u32[0, 0xff, 0xd0]   // syntactic sugar for array construction
+    list = [0,1,2]u32           // or this way, but.. above looks better
+    rec  = { name: "Bob", age: 32 }
+    rec  = Person{ name: "Bob", age: 32 }
+    color = float[0.5, 1.5, 3.5]
+    rgbvec vec3 = color              // allow this, as "structurally maps"! Can keep context-dependant
+    rgbvec = vec3 color
+    
+
