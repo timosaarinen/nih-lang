@@ -67,16 +67,20 @@ export function thisLine(str: string, index: number) {
   return str.substring(index, end);
 }
 
-export function parseName(src: string, index: number): [string, number, number] {
+export function parseName(src: string, index: number): [string, number, number, boolean] {
   let start = index;
   index++;
   while (isLetter(src[index]) || isDigit(src[index])) {
     index++;
   }
   const value: string = src.slice(start, index);
-  return [value, start, index];
+  return [value, start, index, src[index] === '.'];
 }
 
 export function json(o: any): string {
   return JSON.stringify(o);
+}
+
+export function spaces(times: number): string {
+  return ' '.repeat(times);
 }

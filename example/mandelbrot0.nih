@@ -23,12 +23,12 @@ escape to infinity, and the point c is not in the Mandelbrot set. The number of 
 we typically visualize in Mandelbrot set images.
              """))
   (let maxiters 99)                    ; maxiters = 99        ; '=' is immutable equality
-  (set! z (:vec2 0 0))                 ; z := vec2(0.0, 0.0)  ; constructor syntax (GLSL-like vector types, but not as strict)
+  (set! z (call :vec2 0 0))            ; z := vec2(0.0, 0.0)  ; constructor syntax (GLSL-like vector types, but not as strict)
   (set! n 0)                           ; n := 0               ; ':=' is mutable assignment (no pre-declaration required)
   (do-while (                          ; do {
-    (let px (- (^ z.x 2) (^ z.y 2)))   ;    px = z.x^2 - z.y^2
+    (let px (negate (^ z.x 2) (^ z.y 2))) ;    px = z.x^2 - z.y^2   ; TODO: should just write unary minus as '-'?
     (let py (*        -2 (* z.x z.y))) ;    py = -2*z.x*zy
-    (let p (:vec2 px py)               ;    p = vec2(px, py)
+    (let p (call :vec2 px py)          ;    p = vec2(px, py)
     (set! z (+ p c))                   ;    z := p + c
     (let d (call length z))            ;    d = length(z)     ; == sqrt( z.x^2, z.y^2 ) == (call sqrt (+ (^ zx 2) (^ zy 2)))
     (inc! n)                           ;    n++
@@ -42,7 +42,7 @@ we typically visualize in Mandelbrot set images.
 (let mandelbrot0 
   (fn (plist 
     (param cx :float) 
-    (param cy :float) 
+    (param cy :float)
     (returns :int (doc "# of iterations, 0 if not in Mandelbrot set")))
   (let maxiters 80)
   (set! zx 0)

@@ -24,14 +24,15 @@ const operatorSet = new Set(operators);
 //------------------------------------------------------------------------
 const keywords = [
   'alias',
-  'break', 
+  'break',
   'call', 'case', 'const', 'continue',
-  'dec', 'default', 'doc', 'do', 
+  'dec', 'default', 'doc', 'dot', 'do-while', 'do',
   'else', 'enum',
   'foreach', 'forlt', 'for', 'fn',
   'get',
   'if', 'inc!',
   'let',
+  'negate',
   'pure',
   'returns',
   'return',

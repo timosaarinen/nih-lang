@@ -11,6 +11,7 @@ export type AstT =
   | 'inc!'            // 'inc!' ident
   | 'do-while'        // 'do-while' (expr*) cond-expr
   | 'negate'          // 'negate' expr (unary arithmetic operator: minus)
+  | 'dot'             // 'dot' ident*
   | '+'               // num-expr '+' num-expr (binary arithmetic operator: addition)
   | '-'               // num-expr '-' num-expr (binary arithmetic operator: subtraction)
   | '*'               // num-expr '*' num-expr (binary arithmetic operator: multiplication)
@@ -44,7 +45,8 @@ export type AstT =
   | 'cast'            // 'cast' ident :type
   | 'call'            // 'call' ident expr*
   | 'do'              // 'do' stmt-expr*  ..this is basically a group node to contain statements (TODO: better name)
-  | 'loop'            // 'loop' 
+  | 'loop'            // 'loop'
+  | 'list'            // TODO: raw list.. support? (1 2 3) The whole idea was to avoid that?
   | 'TODO:';
 
 export interface Ast {

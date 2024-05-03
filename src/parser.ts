@@ -1,9 +1,9 @@
 import { Lexer, Token, TokenClass, iseof } from './lexer.js';
 import { Ast, nop } from './ast.js';
-import { assert, log, error, fmt, json } from './util.js';
+import { assert, log, error, fmt, json, spaces } from './util.js';
 
-function debug(...args: any[]) { 
-  log('PARSER:', ...args); // DEBUG: uncomment to enable debug logging
+function debugi(lexer: Lexer, ...args: any[]) {
+  log(spaces(lexer.indent), ...args);
 }
 
 //------------------------------------------------------------------------
@@ -22,24 +22,31 @@ function atom(lexer: Lexer, expected?: TokenClass): Ast {
     case 'numlit':  return { type: 'numlit', str: t.str, num: parseFloat(t.str), c:[] };
     case 'strlit':  return { type: 'strlit', str: t.str, c: [] };
     case 'ident':   return { type: 'ident', name: t.str, c: [] };
+    case 'type':    return { type: 'ident', name: t.str, c: [] }; // e.g. (call :vec2 0) -> vec2 as identifier here, type constructor syntax
     default:        return lexer.error('Expected number literal, string literal or identifier, got ' + json(t), t);
   }
 }
-function rest(lexer: Lexer): Ast[] {
+function rest(lexer: Lexer, oftype?: TokenClass): Ast[] {
   // parse the rest of "open sexpr", e.g. original (foo 42 bar) -> 42 bar)
   let c: Ast[] = [];
   while(lexer.peekToken().str !== ')') {
-    assert(lexer.peekToken().str !== 'eof', 'Missing a closing paren? Parsed the file to the end and by my counts.. missing one, nih!');
-    c.push(sexpr(lexer));
+    const token = lexer.peekToken();
+    assert(token.str !== 'eof', 'Missing a closing paren? Parsed the file to the end and by my counts.. missing one, nih!');
+    if (oftype) {
+      if (token.cls != oftype) lexer.error('Expected token of type ' + oftype + ', got ' + token.cls, token);
+      c.push(atom(lexer)); // TODO: can only be atoms? example case: 
+    } else {
+      c.push(sexpr(lexer));
+    }
   }
   return c;
 }
 function param(lexer: Lexer): Ast {
-  debug("'param' ident [:type]");
+  debugi(lexer, "'param' ident [:type]");
   return { type: 'param', c: [sexpr(lexer)] }; // TODO: 'param' ident [:type]
 }
 function plist(lexer: Lexer): Ast {
-  debug("'plist' param* [:type]"); // e.g. (let mandelbrot (fn (plist (param cx :float) (param cy :float) :int) ...) -> (param cx :float)...
+  debugi(lexer, "'plist' param* [:type]"); // e.g. (let mandelbrot (fn (plist (param cx :float) (param cy :float) :int) ...) -> (param cx :float)...
   let fn: Ast = { type: 'fn', c: []} ;
   let token: Token;
   while ((token = lexer.peekToken()).str !== ')') {
@@ -51,7 +58,7 @@ function plist(lexer: Lexer): Ast {
         const typetoken: Token|null = lexer.eatTokenIfType('type');
         if (typetoken) param.rtype = typetoken.str;
         fn.c.push(param);
-        debug('Function param:', json(param));
+        debugi(lexer, 'Function param:', json(param));
         break;
       }
       case 'returns': {
@@ -64,7 +71,7 @@ function plist(lexer: Lexer): Ast {
           fn.rdoc = retdoctoken.str;
           lexer.eatToken('kw', ')');
         }
-        debug('Hey, someone actually typed this function, got returns: ' + json(rettype));
+        debugi(lexer, 'Hey, someone actually typed this function, got returns: ' + json(rettype));
         break;
       }
       case 'doc': { // function details doc
@@ -80,7 +87,7 @@ function plist(lexer: Lexer): Ast {
   }
   return fn; // 'plist' param* [:type]
 }
-function listAst(lexer: Lexer, head: string): Ast {
+function keywordlist(lexer: Lexer, head: string): Ast {
   // - outer parens and the head is eaten by caller, parse the inner rest/tail part (foo 2 (bar 4)) -> 2 (bar 4)
   // - for the next elements, can call sexpr() for any, or atom() and list() for explicit atom/list expected
   switch (head) {
@@ -90,15 +97,16 @@ function listAst(lexer: Lexer, head: string): Ast {
     case 'set!':      return { type: 'set!',    c: [atom(lexer, 'ident'), sexpr(lexer)] };    // 'set!' ident expr
     case 'inc!':      return { type: 'inc!',    c: [atom(lexer, 'ident')] };                  // 'inc!' ident
     case 'for':       return { type: 'for',     c: [list(lexer), ...rest(lexer)] };           // 'for' (for-param*) body-expr*
-    case 'do-while':  return { type: 'inc!',    c: [atom(lexer, 'ident')] };                  // TODO: 'do-while' (expr*) cond-expr
-    case 'fn':        return { type: 'fn',      c: [list(lexer), ...rest(lexer)] };           // TODO: 'fn' plist body-expr*
+    case 'do-while':  return { type: 'do-while',c: [list(lexer), sexpr(lexer)] };             // 'do-while' (expr*) cond-expr
+    case 'fn':        return { type: 'fn',      c: [list(lexer), ...rest(lexer)] };           // 'fn' plist body-expr*
     case 'plist':     return plist(lexer);
     case 'param':     return param(lexer);
     //case 'for-param': // TODO: ((let y (range 0 HEIGHT)) (let x (range 0 WIDTH))) 
     case 'return':    return { type: 'return',  c: [sexpr(lexer)] };                          // 'return' [expr] - TODO: optional retvalue (check function signature)
     case 'cast':      return { type: 'cast',    c: [sexpr(lexer), atom(lexer, 'type')] };     // 'cast' expr :type
-    case 'call':      return { type: 'call',    c: [atom(lexer, 'ident'), ...rest(lexer)] };  // 'call' ident expr*
+    case 'call':      return { type: 'call',    c: [sexpr(lexer), ...rest(lexer)] };          // 'call' ident|type|fn expr* ..ctor with type, also lamdbdas
     case 'do':        return { type: 'do',      c: [...rest(lexer)] };                        // 'do' stmt-expr*
+    case 'dot':       return { type: 'dot',     c: rest(lexer, 'ident') };
     case '+':         return { type: '+',       c: [sexpr(lexer), sexpr(lexer)] };            // '+' expr expr
     case '-':         return { type: '-',       c: [sexpr(lexer), sexpr(lexer)] };            // '-' expr expr
     case '*':         return { type: '*',       c: [sexpr(lexer), sexpr(lexer)] };            // '*' expr expr
@@ -121,17 +129,37 @@ function listAst(lexer: Lexer, head: string): Ast {
   }
 }
 function list(lexer: Lexer, op?: string): Ast {
+  lexer.indent++;
   // e.g. (foo 1 2 (bar 42))
   lexer.eatToken('kw', '(');
-  assert(lexer.peekToken().cls !== 'eof', "Expected S-expression list to continue, got eof"); // TODO: tell the opening paren in error
+  lexer.eofcheck();
   assert(lexer.peekToken().str !== ')', "No empty list () allowed."); // TODO: allow () ?
-  const head = lexer.eatToken();
-  const ast = listAst(lexer, head.str); // TODO: no forcecast, map?
+  const head = lexer.peekToken();
+  let ast: Ast; // TODO: think more..
+  if (head.str === '(') {
+    debugi(lexer, 'sublist', '(', lexer.peekToken(1));
+    ast = { type: 'list', c: [] };
+    do {
+      let sublist = list(lexer); // e.g. (^ **(dot a b)** 2)
+      ast.c.push(sublist);
+      debugi(lexer, '  ->', json(ast));
+      lexer.eofcheck();
+    } while(lexer.peekToken().str !== ')');
+  } else {
+    debugi(lexer, 'list ->', head.str);
+    lexer.eatToken('kw', head.str); // e.g. 'call'
+    ast = keywordlist(lexer, head.str); // TODO: no forcecast, map?
+    let nexttoken = lexer.peekToken();
+    if (nexttoken.str !== ')') {
+      lexer.error("Syntax error with S-expression " + head.str + ", expected it to end to closing paren, but continues with: " + json(nexttoken));
+    }
+  }
   lexer.eatToken('kw', ')');
+  lexer.indent--;
   return ast;
 }
 function sexpr(lexer: Lexer): Ast {
-  debug('sexpr:', lexer.peekToken());
+  debugi(lexer, 'sexpr:', lexer.peekToken());
   return (lexer.peekToken().str === '(') ? list(lexer) : atom(lexer);
 }
 
@@ -182,12 +210,10 @@ function nihexpr(lexer: Lexer): Ast {
 export function parseModule(lexer: Lexer): Ast {
   let c: Ast[] = [];
   let token: Token;
-  debug('TOP-LEVEL STMTs should start..');
   while(true) {
     let token = lexer.peekToken();
     if (iseof(token)) break;
     // all statements starting with '(' are treated as S-expressions
-    debug('TOP-LEVEL STMT');
     c.push(token.str === '(' ? sexpr(lexer) : nihexpr(lexer));
   }
   return { type: 'module',  c: c };
