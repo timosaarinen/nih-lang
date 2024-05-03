@@ -2,7 +2,10 @@ import { strmatch, log, isDigit, isLetter, parseName, nextLineStart, thisLine, e
 import { matchKeyword, matchOperator } from './langdef.js';
 
 function debug(...args: any[]) { 
-  log('LEXER:', ...args); // DEBUG: uncomment to enable debug logging
+  //log('LEXER:', ...args); // DEBUG: uncomment to enable debug logging
+}
+function debugeating(...args: any[]) {
+  log('EAT:', ...args); // DEBUG: uncomment to enable logging token eating
 }
 
 export type TokenClass =
@@ -28,6 +31,7 @@ export function iseof(token: Token): boolean { return token.cls === 'eof' }
 //  TODO: no classes.
 //------------------------------------------------------------------------
 export class Lexer {
+  public showsourcelines: boolean = false; // enable to log each source line for diagnostics
   public tokens: Token[] = [];
   private current: number = 0;
   private source: string = "";
@@ -52,7 +56,7 @@ export class Lexer {
 
   private startnewline(index: number): number {
     this.linestart.push(index);
-    console.log(this.filename + ':' + this.linestart.length + ': ' + this.sourceforward(index))
+    if (this.showsourcelines) log(this.filename + ':' + this.linestart.length + ': ' + this.sourceforward(index))
     return index;
   }
 
@@ -80,7 +84,7 @@ export class Lexer {
 
       //---- Newline -----------------------------------------------------
       if (char === '\n') { 
-        console.log('-> newline'); // TODO: debug('-> newline');
+        debug('-> newline');
         index = this.startnewline(nextLineStart(src, index));
       }
       //---- Number literals ---------------------------------------------
@@ -146,8 +150,8 @@ export class Lexer {
                     index = this.skip('/*', index-1);
                 }
             }
-            console.log('--> got out of nested forward scan loop for /* */, @index:', index, ' @src.length:', src.length);
-            console.log(json(this.getLineAndColumn(index)));
+            //console.log('--> got out of nested forward scan loop for /* */, @index:', index, ' @src.length:', src.length);
+            //console.log(json(this.getLineAndColumn(index)));
 
             if (index >= src.length && this.nestedcomments.length > 0) {
                 this.error(`Hey, you got nestable comment open, nih! Start positions: ${JSON.stringify(this.nestedcomments)}`);
@@ -214,21 +218,18 @@ export class Lexer {
       let t = this.tokens[this.current++];
       if (expectedValue && t.str !== expectedValue) this.error(`Expected ${expectedValue}, got ${t.str}`, t);
       if (expectedType && t.cls != expectedType) this.error(`Expected token of type ${expectedType}, got ${t.str}`, t);
+      debugeating(t.str, t.cls, ':', t.posStartEnd[0]);
       return t;
     } else {
       this.error("Unexpected end-of-file after", this.tokens[this.current - 1]);
     }
   }
   public eatTokenIfType(expectedType: TokenClass, expectedValue? : string): Token | null {
-    if (this.current < this.tokens.length) {
-      let t = this.tokens[this.current];
-      if (t.cls !== expectedType) return null;
-      if (expectedValue && t.str !== expectedValue) return null;
-      this.current++;
-      return t;
-    } else {
-      this.error("Unexpected end-of-file after", this.tokens[this.current - 1]);
-    }
+    const t = this.peekToken();
+    if (t.cls == 'eof') this.error("Unexpected end-of-file after", this.tokens[this.current - 1]);
+    if (t.cls !== expectedType) { debugeating('eatTokenIfType() fail with', t.str, '!=', expectedType); return null; }
+    if (expectedValue && t.str !== expectedValue) { debugeating('eatTokenIfType() matched class, but ', t.str, '!=', expectedValue); return null; }
+    return this.eatToken(expectedType, expectedValue);
   }
 
   public pos(): number {
@@ -256,7 +257,7 @@ export class Lexer {
         // Position is in the previous line
         const line = i;
         const column = position - this.linestart[i - 1];
-        console.log('getLineAndColumn: line:', line, 'column:', column); // TODO: DEBUG:
+        //console.log('getLineAndColumn: line:', line, 'column:', column); // DEBUG:
         return { line, column };
       }
     }
@@ -284,10 +285,10 @@ export class Lexer {
         highlightLine += errorMarkerChar;
     }
 
-    console.log("*************************** NIH! *****************************************");
-    console.log(`ERROR: ${this.filename}:${line}:${column}: ${err}:`);
-    console.log(errorLine);
-    console.log(highlightLine);
+    console.error("*************************** NIH! *****************************************");
+    console.error(`ERROR: ${this.filename}:${line}:${column}: ${err}:`);
+    console.error(errorLine);
+    console.error(highlightLine);
 
     throw new Error("Compilation failed.");
   }
