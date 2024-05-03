@@ -5,6 +5,7 @@
   ],
   "patterns": [
     { "include": "#comments" },
+    { "include": "#block-comments"},
     { "include": "#strings" },
     { "include": "#operators" },
     { "include": "#keywords" },
@@ -12,6 +13,30 @@
     { "include": "#natives" }
   ],
   "repository": {
+    "block-comments": {
+      "patterns": [
+          {
+              "name": "comment.block.nih",
+              "begin": "/\\*",
+              "end":   "\\*/",
+              "beginCaptures": {
+                "0": {
+                  "name": "punctuation.definition.comment.nih"
+                }
+              },
+              "endCaptures": {
+                "0": {
+                  "name": "punctuation.definition.comment.nih"
+                }
+              },
+              "patterns": [
+                  {
+                      "include": "#block-comments"
+                  }
+              ]
+          }
+      ]
+    },
     "comments": {
         "patterns": [
             {
@@ -27,19 +52,7 @@
                 "match": ";.*"
             },
             {
-                "name":  "comment.block.nih",
-                "begin": "/\\*",
-                "end":   "\\*/",
-                "beginCaptures": {
-                  "0": {
-                    "name": "punctuation.definition.comment.nih"
-                  }
-                },
-                "endCaptures": {
-                  "0": {
-                    "name": "punctuation.definition.comment.nih"
-                  }
-                }
+                "include": "#block-comments"
             },
             {
                 "name": "comment.block.html.js",
