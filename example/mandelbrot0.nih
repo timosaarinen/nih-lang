@@ -2,6 +2,9 @@
 (let WIDTH 16)   ; output width in characters
 (let HEIGHT 16)  ; output height in characters
 
+#define neg negate
+# The above is a preprocessor/lexer directive! But this line is a comment, because there is whitespace at start. #pragmas don't. 
+
 #  To-the-end-of-line comment ..short. Must have at least one whitespace after '#', otherwise #pragma.
 ;  To-the-end-of-line comment ..might also underline that no terminator character in the language?
 // To-the-end-of-line comment ..too many options? Nah, depends on aesthetic preference (and IDE makes it irrelevant anyway).
@@ -26,7 +29,7 @@ we typically visualize in Mandelbrot set images.
   (set! z (call :vec2 0 0))            ; z := vec2(0.0, 0.0)  ; constructor syntax (GLSL-like vector types, but not as strict)
   (set! n 0)                           ; n := 0               ; ':=' is mutable assignment (no pre-declaration required)
   (do-while (                          ; do {
-    (let px (negate (^ z.x 2) (^ z.y 2))) ;    px = z.x^2 - z.y^2   ; TODO: should just write unary minus as '-'?
+    (let px (- (^ z.x 2) (^ z.y 2)))   ;    px = z.x^2 - z.y^2
     (let py (*        -2 (* z.x z.y))) ;    py = -2*z.x*zy
     (let p (call :vec2 px py)          ;    p = vec2(px, py)
     (set! z (+ p c))                   ;    z := p + c

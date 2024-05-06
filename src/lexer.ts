@@ -178,7 +178,16 @@ export class Lexer {
       }
       //---- #pragma -----------------------------------------------------
       else if (char == '#') {
-        debug('#pragma: ', thisLine(src, index));
+        const [pragma, _, pragmaend] = parseName(src, index+1);
+        switch(pragma) {
+          case 'define': {
+            const [matchtext,   _2, matchend]   = parseName(src, pragmaend + 1);
+            const [replacewith, _3, replaceend] = parseName(src, matchend + 1);
+            log('#define', matchtext, replacewith);
+            break;
+          }
+          default: log('skipping #pragma: ', thisLine(src, index));
+        }
         index = this.startnewline(nextLineStart(src, index));
       }
       //---- Identifiers -------------------------------------------------
@@ -304,7 +313,7 @@ export class Lexer {
     }
 
     console.error("*************************** NIH! *****************************************");
-    console.error(`ERROR: ${this.filename}:${line}:${column}: ${err}:`);
+    console.error(`${this.filename}:${line}:${column}: ${err}:`);
     console.error(errorLine);
     console.error(highlightLine);
 
