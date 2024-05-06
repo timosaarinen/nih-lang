@@ -1,5 +1,6 @@
 export const isLetter = (char: string) => /[a-zA-Z_]/.test(char);
-export const isDigit = (char: string) => /[0-9]/.test(char);
+export const isNumberChar = (char: string) => '-0123456789.'.includes(char);
+export const isDigitChar = (char: string) => /[0-9]/.test(char);
 
 //------------------------------------------------------------------------
 export function fmt(...args: any[]): string {
@@ -70,7 +71,7 @@ export function thisLine(str: string, index: number) {
 export function parseName(src: string, index: number): [string, number, number, boolean] {
   let start = index;
   index++;
-  while (isLetter(src[index]) || isDigit(src[index])) {
+  while (isLetter(src[index]) || isDigitChar(src[index])) {
     index++;
   }
   const value: string = src.slice(start, index);

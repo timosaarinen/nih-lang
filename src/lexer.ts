@@ -1,4 +1,4 @@
-import { strmatch, log, isDigit, isLetter, parseName, nextLineStart, thisLine, error, errorbox, json, spaces } from './util.js';
+import { json, strmatch, log, isNumberChar, isLetter, parseName, nextLineStart, thisLine, error, errorbox, spaces, assert, isDigitChar } from './util.js';
 import { matchKeyword, matchOperator } from './langdef.js';
 
 function debug(...args: any[]) { 
@@ -79,6 +79,7 @@ export class Lexer {
 
       this.current = index; // track current, remember to clear for parser calls!
 
+      const charstartindex = index; // ..makes some of the code below simpler
       const char = src[index];
       const nextchar = (index + 1) < src.length ? src[index+1] : '';
       let opdesc; //let opdesc = matchOperator(src, index);
@@ -89,15 +90,17 @@ export class Lexer {
         index = this.startnewline(nextLineStart(src, index));
       }
       //---- Number literals ---------------------------------------------
-      else if (isDigit(char)) {
+      else if (isDigitChar(char) || (char === '-' && isNumberChar(nextchar))) {
         debug('-> number');
-        let start = index;
-        index++;
-        while (isDigit(src[index])) {
-          index++;
-        }
-        const value = src.slice(start, index);
-        pushtoken(this.tokens, 'numlit', value, start, index);
+        // if (chat === '-') log("-> number literal starting with '-'", this.sourceforward(index)); // e.g. -2
+        while (isDigitChar(src[++index])) { assert(index < src.length); }
+        const value = src.slice(charstartindex, index);
+        log("number literal starting with '-':", value);
+        pushtoken(this.tokens, 'numlit', value, charstartindex, index);
+      }
+      else if (isDigitChar(char)) {
+        const value = src.slice(charstartindex, index);
+        pushtoken(this.tokens, 'numlit', value, charstartindex, index);
       }
       //---- String literals ---------------------------------------------
       // TODO: handle string interpolation in parser?
