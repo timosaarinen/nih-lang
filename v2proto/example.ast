@@ -281,7 +281,7 @@
         },
         {
           "kind": "code",
-          "source": "WIDTH  = 40; HEIGHT = 20\nrs = -2.0; re = 1.0\nis = -1.0; ie = 1.0\n\nfor j = 0, HEIGHT - 1 do\n  for i = 0, WIDTH - 1 do\n    cx = rs + (i / (WIDTH - 1)) * (re - rs)\n    cy = is + (j / (HEIGHT - 1)) * (ie - is)\n    m  = mandelbrot(cx, cy)\n    printchars(m > 0 ? '*' : ' ')\n  end\n  printlf()\nend\n",
+          "source": "WIDTH  = 40; HEIGHT = 20\nrs = -2.0; re = 1.0\nis = -1.0; ie = 1.0\n\nfor j = 0, HEIGHT - 1 do\n  for i = 0, WIDTH - 1 do\n    cx = rs + (i / (WIDTH - 1)) * (re - rs)\n    cy = is + (j / (HEIGHT - 1)) * (ie - is)\n    m  = mandelbrot(cx, cy)\n    print(m > 0 ? '*' : ' ')\n  end\n  print('\\n')\nend\n",
           "ast": {
             "type": "program",
             "body": [
@@ -360,203 +360,216 @@
                 }
               },
               {
-                "type": "assignment",
-                "left": {
-                  "type": "identifier",
-                  "name": "for"
-                },
-                "right": {
+                "type": "for",
+                "var": "j",
+                "start": {
                   "type": "literal",
                   "value": 0
-                }
-              },
-              {
-                "type": "assignment",
-                "left": {
-                  "type": "identifier",
-                  "name": "for"
                 },
-                "right": {
-                  "type": "literal",
-                  "value": 0
-                }
-              },
-              {
-                "type": "assignment",
-                "left": {
-                  "type": "identifier",
-                  "name": "cx"
-                },
-                "right": {
+                "end": {
                   "type": "binary",
-                  "operator": "+",
+                  "operator": "-",
                   "left": {
                     "type": "identifier",
-                    "name": "rs"
+                    "name": "HEIGHT"
                   },
                   "right": {
-                    "type": "binary",
-                    "operator": "*",
-                    "left": {
-                      "type": "binary",
-                      "operator": "/",
-                      "left": {
-                        "type": "identifier",
-                        "name": "i"
-                      },
-                      "right": {
-                        "type": "binary",
-                        "operator": "-",
-                        "left": {
-                          "type": "identifier",
-                          "name": "WIDTH"
-                        },
-                        "right": {
-                          "type": "literal",
-                          "value": 1
-                        }
-                      }
+                    "type": "literal",
+                    "value": 1
+                  }
+                },
+                "body": [
+                  {
+                    "type": "for",
+                    "var": "i",
+                    "start": {
+                      "type": "literal",
+                      "value": 0
                     },
-                    "right": {
+                    "end": {
                       "type": "binary",
                       "operator": "-",
                       "left": {
                         "type": "identifier",
-                        "name": "re"
+                        "name": "WIDTH"
                       },
                       "right": {
-                        "type": "identifier",
-                        "name": "rs"
+                        "type": "literal",
+                        "value": 1
                       }
-                    }
-                  }
-                }
-              },
-              {
-                "type": "assignment",
-                "left": {
-                  "type": "identifier",
-                  "name": "cy"
-                },
-                "right": {
-                  "type": "binary",
-                  "operator": "+",
-                  "left": {
-                    "type": "identifier",
-                    "name": "is"
-                  },
-                  "right": {
-                    "type": "binary",
-                    "operator": "*",
-                    "left": {
-                      "type": "binary",
-                      "operator": "/",
-                      "left": {
-                        "type": "identifier",
-                        "name": "j"
-                      },
-                      "right": {
-                        "type": "binary",
-                        "operator": "-",
+                    },
+                    "body": [
+                      {
+                        "type": "assignment",
                         "left": {
                           "type": "identifier",
-                          "name": "HEIGHT"
+                          "name": "cx"
                         },
                         "right": {
-                          "type": "literal",
-                          "value": 1
+                          "type": "binary",
+                          "operator": "+",
+                          "left": {
+                            "type": "identifier",
+                            "name": "rs"
+                          },
+                          "right": {
+                            "type": "binary",
+                            "operator": "*",
+                            "left": {
+                              "type": "binary",
+                              "operator": "/",
+                              "left": {
+                                "type": "identifier",
+                                "name": "i"
+                              },
+                              "right": {
+                                "type": "binary",
+                                "operator": "-",
+                                "left": {
+                                  "type": "identifier",
+                                  "name": "WIDTH"
+                                },
+                                "right": {
+                                  "type": "literal",
+                                  "value": 1
+                                }
+                              }
+                            },
+                            "right": {
+                              "type": "binary",
+                              "operator": "-",
+                              "left": {
+                                "type": "identifier",
+                                "name": "re"
+                              },
+                              "right": {
+                                "type": "identifier",
+                                "name": "rs"
+                              }
+                            }
+                          }
                         }
-                      }
-                    },
-                    "right": {
-                      "type": "binary",
-                      "operator": "-",
-                      "left": {
-                        "type": "identifier",
-                        "name": "ie"
                       },
-                      "right": {
-                        "type": "identifier",
-                        "name": "is"
-                      }
-                    }
-                  }
-                }
-              },
-              {
-                "type": "assignment",
-                "left": {
-                  "type": "identifier",
-                  "name": "m"
-                },
-                "right": {
-                  "type": "call",
-                  "callee": "mandelbrot",
-                  "arguments": [
-                    {
-                      "type": "identifier",
-                      "name": "cx"
-                    },
-                    {
-                      "type": "identifier",
-                      "name": "cy"
-                    }
-                  ]
-                }
-              },
-              {
-                "type": "expression",
-                "expr": {
-                  "type": "call",
-                  "callee": "printchars",
-                  "arguments": [
-                    {
-                      "type": "ternary",
-                      "test": {
-                        "type": "binary",
-                        "operator": ">",
+                      {
+                        "type": "assignment",
+                        "left": {
+                          "type": "identifier",
+                          "name": "cy"
+                        },
+                        "right": {
+                          "type": "binary",
+                          "operator": "+",
+                          "left": {
+                            "type": "identifier",
+                            "name": "is"
+                          },
+                          "right": {
+                            "type": "binary",
+                            "operator": "*",
+                            "left": {
+                              "type": "binary",
+                              "operator": "/",
+                              "left": {
+                                "type": "identifier",
+                                "name": "j"
+                              },
+                              "right": {
+                                "type": "binary",
+                                "operator": "-",
+                                "left": {
+                                  "type": "identifier",
+                                  "name": "HEIGHT"
+                                },
+                                "right": {
+                                  "type": "literal",
+                                  "value": 1
+                                }
+                              }
+                            },
+                            "right": {
+                              "type": "binary",
+                              "operator": "-",
+                              "left": {
+                                "type": "identifier",
+                                "name": "ie"
+                              },
+                              "right": {
+                                "type": "identifier",
+                                "name": "is"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "type": "assignment",
                         "left": {
                           "type": "identifier",
                           "name": "m"
                         },
                         "right": {
-                          "type": "literal",
-                          "value": 0
+                          "type": "call",
+                          "callee": "mandelbrot",
+                          "arguments": [
+                            {
+                              "type": "identifier",
+                              "name": "cx"
+                            },
+                            {
+                              "type": "identifier",
+                              "name": "cy"
+                            }
+                          ]
                         }
                       },
-                      "consequent": {
-                        "type": "literal",
-                        "value": "*"
-                      },
-                      "alternate": {
-                        "type": "literal",
-                        "value": " "
+                      {
+                        "type": "expression",
+                        "expr": {
+                          "type": "call",
+                          "callee": "print",
+                          "arguments": [
+                            {
+                              "type": "ternary",
+                              "test": {
+                                "type": "binary",
+                                "operator": ">",
+                                "left": {
+                                  "type": "identifier",
+                                  "name": "m"
+                                },
+                                "right": {
+                                  "type": "literal",
+                                  "value": 0
+                                }
+                              },
+                              "consequent": {
+                                "type": "literal",
+                                "value": "*"
+                              },
+                              "alternate": {
+                                "type": "literal",
+                                "value": " "
+                              }
+                            }
+                          ]
+                        }
                       }
+                    ]
+                  },
+                  {
+                    "type": "expression",
+                    "expr": {
+                      "type": "call",
+                      "callee": "print",
+                      "arguments": [
+                        {
+                          "type": "literal",
+                          "value": "\\n"
+                        }
+                      ]
                     }
-                  ]
-                }
-              },
-              {
-                "type": "expression",
-                "expr": {
-                  "type": "identifier",
-                  "name": "end"
-                }
-              },
-              {
-                "type": "expression",
-                "expr": {
-                  "type": "call",
-                  "callee": "printlf",
-                  "arguments": []
-                }
-              },
-              {
-                "type": "expression",
-                "expr": {
-                  "type": "identifier",
-                  "name": "end"
-                }
+                  }
+                ]
               }
             ]
           }

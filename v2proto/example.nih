@@ -40,9 +40,9 @@ for j = 0, HEIGHT - 1 do
     cx = rs + (i / (WIDTH - 1)) * (re - rs)
     cy = is + (j / (HEIGHT - 1)) * (ie - is)
     m  = mandelbrot(cx, cy)
-    printchars(m > 0 ? '*' : ' ')
+    print(m > 0 ? '*' : ' ')
   end
-  printlf()
+  print('\n')
 end
 #end code
 

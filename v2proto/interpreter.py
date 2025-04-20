@@ -41,6 +41,16 @@ class Interpreter:
         if t == 'function':
             self.functions[stmt['name']] = stmt
             return
+        if t == 'for':
+            var = stmt['var']
+            start = self._eval_expression(stmt['start'], env)
+            end = self._eval_expression(stmt['end'], env)
+            for val in range(int(start), int(end) + 1):
+                env[var] = val
+                if self.debug:
+                    print(f"Loop {var} = {val}")
+                self._eval_statements(stmt['body'], env)
+            return
         if t == 'while':
             while self._eval_expression(stmt['test'], env):
                 self._eval_statements(stmt['body'], env)

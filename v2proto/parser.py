@@ -249,7 +249,7 @@ def parse_statements(lines):
             nest = 1
             while idx < len(lines) and nest > 0:
                 l = lines[idx].strip()
-                if l.startswith("fun ") or l.startswith("while ") or l.startswith("if "):
+                if l.startswith("fun ") or l.startswith("while ") or l.startswith("if ") or l.startswith("for "):
                     nest += 1
                     body_lines.append(lines[idx])
                 elif l == "end":
@@ -265,6 +265,38 @@ def parse_statements(lines):
             statements.append({"type": "function", "name": name, "params": params, "returnType": ret, "body": body})
             idx += 1
             continue
+        # For loop
+        if line.startswith("for "):
+            # capture var, start and end expressions (allows spaces in expressions)
+            m = re.match(r"for\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*?)\s*,\s*(.*?)\s*do\b", line)
+            if not m:
+                raise SyntaxError(f"Invalid for syntax: {line}")
+            var = m.group(1)
+            start_str = m.group(2)
+            end_str = m.group(3)
+            start_expr = parse_expression(start_str)
+            end_expr = parse_expression(end_str)
+            idx += 1
+            body_lines = []
+            nest = 1
+            while idx < len(lines) and nest > 0:
+                l = lines[idx].strip()
+                if l.startswith("for ") or l.startswith("while ") or l.startswith("if ") or l.startswith("fun "):
+                    nest += 1
+                    body_lines.append(lines[idx])
+                elif l == "end":
+                    nest -= 1
+                    if nest == 0:
+                        break
+                    else:
+                        body_lines.append(lines[idx])
+                else:
+                    body_lines.append(lines[idx])
+                idx += 1
+            body = parse_statements(body_lines)
+            statements.append({"type": "for", "var": var, "start": start_expr, "end": end_expr, "body": body})
+            idx += 1
+            continue
         # While loop
         if line.startswith("while "):
             cond = line[len("while "):].strip()
@@ -275,7 +307,7 @@ def parse_statements(lines):
             nest = 1
             while idx < len(lines) and nest > 0:
                 l = lines[idx].strip()
-                if l.startswith("while ") or l.startswith("if "):
+                if l.startswith("while ") or l.startswith("if ") or l.startswith("fun ") or l.startswith("for "):
                     nest += 1
                     body_lines.append(lines[idx])
                 elif l == "end":
@@ -301,7 +333,7 @@ def parse_statements(lines):
             nest = 1
             while idx < len(lines) and nest > 0:
                 l = lines[idx].strip()
-                if l.startswith("if ") or l.startswith("while "):
+                if l.startswith("if ") or l.startswith("while ") or l.startswith("fun ") or l.startswith("for "):
                     nest += 1
                     body_lines.append(lines[idx])
                 elif l == "end":
