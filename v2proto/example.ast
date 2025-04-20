@@ -1,0 +1,529 @@
+{
+  "files": [
+    {
+      "name": "src/mandelbrot.nih",
+      "lang": "nih-block",
+      "sections": [
+        {
+          "kind": "markdown",
+          "text": "\n# Mandelbrot Set Visualization\n\nCompute the escape count for each point and render ASCII art.\n\n"
+        },
+        {
+          "kind": "code",
+          "source": "fun mandelbrot(cx: Float, cy: Float): Int\n  maxiters = 80\n  zx = 0.0; zy = 0.0; n = 0\n\n  while n < maxiters do\n    px = zx*zx - zy*zy\n    py = 2 * zx * zy\n    zx = px + cx\n    zy = py + cy\n\n    if sqrt(zx*zx + zy*zy) > 2 then\n      return 0    // escaped immediately\n    end\n\n    n += 1\n  end\n\n  return n\nend\n",
+          "ast": {
+            "type": "program",
+            "body": [
+              {
+                "type": "function",
+                "name": "mandelbrot",
+                "params": [
+                  {
+                    "name": "cx",
+                    "type": "Float"
+                  },
+                  {
+                    "name": "cy",
+                    "type": "Float"
+                  }
+                ],
+                "returnType": "Int",
+                "body": [
+                  {
+                    "type": "assignment",
+                    "left": {
+                      "type": "identifier",
+                      "name": "maxiters"
+                    },
+                    "right": {
+                      "type": "literal",
+                      "value": 80
+                    }
+                  },
+                  {
+                    "type": "assignment",
+                    "left": {
+                      "type": "identifier",
+                      "name": "zx"
+                    },
+                    "right": {
+                      "type": "literal",
+                      "value": 0.0
+                    }
+                  },
+                  {
+                    "type": "assignment",
+                    "left": {
+                      "type": "identifier",
+                      "name": "zy"
+                    },
+                    "right": {
+                      "type": "literal",
+                      "value": 0.0
+                    }
+                  },
+                  {
+                    "type": "assignment",
+                    "left": {
+                      "type": "identifier",
+                      "name": "n"
+                    },
+                    "right": {
+                      "type": "literal",
+                      "value": 0
+                    }
+                  },
+                  {
+                    "type": "while",
+                    "test": "n < maxiters",
+                    "body": [
+                      {
+                        "type": "assignment",
+                        "left": {
+                          "type": "identifier",
+                          "name": "px"
+                        },
+                        "right": {
+                          "type": "binary",
+                          "operator": "-",
+                          "left": {
+                            "type": "binary",
+                            "operator": "*",
+                            "left": {
+                              "type": "identifier",
+                              "name": "zx"
+                            },
+                            "right": {
+                              "type": "identifier",
+                              "name": "zx"
+                            }
+                          },
+                          "right": {
+                            "type": "binary",
+                            "operator": "*",
+                            "left": {
+                              "type": "identifier",
+                              "name": "zy"
+                            },
+                            "right": {
+                              "type": "identifier",
+                              "name": "zy"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "type": "assignment",
+                        "left": {
+                          "type": "identifier",
+                          "name": "py"
+                        },
+                        "right": {
+                          "type": "binary",
+                          "operator": "*",
+                          "left": {
+                            "type": "binary",
+                            "operator": "*",
+                            "left": {
+                              "type": "literal",
+                              "value": 2
+                            },
+                            "right": {
+                              "type": "identifier",
+                              "name": "zx"
+                            }
+                          },
+                          "right": {
+                            "type": "identifier",
+                            "name": "zy"
+                          }
+                        }
+                      },
+                      {
+                        "type": "assignment",
+                        "left": {
+                          "type": "identifier",
+                          "name": "zx"
+                        },
+                        "right": {
+                          "type": "binary",
+                          "operator": "+",
+                          "left": {
+                            "type": "identifier",
+                            "name": "px"
+                          },
+                          "right": {
+                            "type": "identifier",
+                            "name": "cx"
+                          }
+                        }
+                      },
+                      {
+                        "type": "assignment",
+                        "left": {
+                          "type": "identifier",
+                          "name": "zy"
+                        },
+                        "right": {
+                          "type": "binary",
+                          "operator": "+",
+                          "left": {
+                            "type": "identifier",
+                            "name": "py"
+                          },
+                          "right": {
+                            "type": "identifier",
+                            "name": "cy"
+                          }
+                        }
+                      },
+                      {
+                        "type": "if",
+                        "test": "sqrt(zx*zx + zy*zy) > 2",
+                        "body": [
+                          {
+                            "type": "return",
+                            "value": {
+                              "type": "literal",
+                              "value": 0
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "assignment",
+                "left": {
+                  "type": "identifier",
+                  "name": "n"
+                },
+                "right": {
+                  "type": "binary",
+                  "operator": "+",
+                  "left": {
+                    "type": "identifier",
+                    "name": "n"
+                  },
+                  "right": {
+                    "type": "literal",
+                    "value": 1
+                  }
+                }
+              },
+              {
+                "type": "expression",
+                "expr": {
+                  "type": "identifier",
+                  "name": "end"
+                }
+              },
+              {
+                "type": "return",
+                "value": {
+                  "type": "identifier",
+                  "name": "n"
+                }
+              },
+              {
+                "type": "expression",
+                "expr": {
+                  "type": "identifier",
+                  "name": "end"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "kind": "markdown",
+          "text": "\n## Setup & Render Loop\n\nDefine grid dimensions and bounds, then draw the set row by row.\n\n"
+        },
+        {
+          "kind": "code",
+          "source": "WIDTH  = 40; HEIGHT = 20\nrs = -2.0; re = 1.0\nis = -1.0; ie = 1.0\n\nfor j = 0, HEIGHT - 1 do\n  for i = 0, WIDTH - 1 do\n    cx = rs + (i / (WIDTH - 1)) * (re - rs)\n    cy = is + (j / (HEIGHT - 1)) * (ie - is)\n    m  = mandelbrot(cx, cy)\n    printchars(m > 0 ? '*' : ' ')\n  end\n  printlf()\nend\n",
+          "ast": {
+            "type": "program",
+            "body": [
+              {
+                "type": "assignment",
+                "left": {
+                  "type": "identifier",
+                  "name": "WIDTH"
+                },
+                "right": {
+                  "type": "literal",
+                  "value": 40
+                }
+              },
+              {
+                "type": "assignment",
+                "left": {
+                  "type": "identifier",
+                  "name": "HEIGHT"
+                },
+                "right": {
+                  "type": "literal",
+                  "value": 20
+                }
+              },
+              {
+                "type": "assignment",
+                "left": {
+                  "type": "identifier",
+                  "name": "rs"
+                },
+                "right": {
+                  "type": "unary",
+                  "operator": "-",
+                  "operand": {
+                    "type": "literal",
+                    "value": 2.0
+                  }
+                }
+              },
+              {
+                "type": "assignment",
+                "left": {
+                  "type": "identifier",
+                  "name": "re"
+                },
+                "right": {
+                  "type": "literal",
+                  "value": 1.0
+                }
+              },
+              {
+                "type": "assignment",
+                "left": {
+                  "type": "identifier",
+                  "name": "is"
+                },
+                "right": {
+                  "type": "unary",
+                  "operator": "-",
+                  "operand": {
+                    "type": "literal",
+                    "value": 1.0
+                  }
+                }
+              },
+              {
+                "type": "assignment",
+                "left": {
+                  "type": "identifier",
+                  "name": "ie"
+                },
+                "right": {
+                  "type": "literal",
+                  "value": 1.0
+                }
+              },
+              {
+                "type": "assignment",
+                "left": {
+                  "type": "identifier",
+                  "name": "for"
+                },
+                "right": {
+                  "type": "literal",
+                  "value": 0
+                }
+              },
+              {
+                "type": "assignment",
+                "left": {
+                  "type": "identifier",
+                  "name": "for"
+                },
+                "right": {
+                  "type": "literal",
+                  "value": 0
+                }
+              },
+              {
+                "type": "assignment",
+                "left": {
+                  "type": "identifier",
+                  "name": "cx"
+                },
+                "right": {
+                  "type": "binary",
+                  "operator": "+",
+                  "left": {
+                    "type": "identifier",
+                    "name": "rs"
+                  },
+                  "right": {
+                    "type": "binary",
+                    "operator": "*",
+                    "left": {
+                      "type": "binary",
+                      "operator": "/",
+                      "left": {
+                        "type": "identifier",
+                        "name": "i"
+                      },
+                      "right": {
+                        "type": "binary",
+                        "operator": "-",
+                        "left": {
+                          "type": "identifier",
+                          "name": "WIDTH"
+                        },
+                        "right": {
+                          "type": "literal",
+                          "value": 1
+                        }
+                      }
+                    },
+                    "right": {
+                      "type": "binary",
+                      "operator": "-",
+                      "left": {
+                        "type": "identifier",
+                        "name": "re"
+                      },
+                      "right": {
+                        "type": "identifier",
+                        "name": "rs"
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "type": "assignment",
+                "left": {
+                  "type": "identifier",
+                  "name": "cy"
+                },
+                "right": {
+                  "type": "binary",
+                  "operator": "+",
+                  "left": {
+                    "type": "identifier",
+                    "name": "is"
+                  },
+                  "right": {
+                    "type": "binary",
+                    "operator": "*",
+                    "left": {
+                      "type": "binary",
+                      "operator": "/",
+                      "left": {
+                        "type": "identifier",
+                        "name": "j"
+                      },
+                      "right": {
+                        "type": "binary",
+                        "operator": "-",
+                        "left": {
+                          "type": "identifier",
+                          "name": "HEIGHT"
+                        },
+                        "right": {
+                          "type": "literal",
+                          "value": 1
+                        }
+                      }
+                    },
+                    "right": {
+                      "type": "binary",
+                      "operator": "-",
+                      "left": {
+                        "type": "identifier",
+                        "name": "ie"
+                      },
+                      "right": {
+                        "type": "identifier",
+                        "name": "is"
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "type": "assignment",
+                "left": {
+                  "type": "identifier",
+                  "name": "m"
+                },
+                "right": {
+                  "type": "call",
+                  "callee": "mandelbrot",
+                  "arguments": [
+                    {
+                      "type": "identifier",
+                      "name": "cx"
+                    },
+                    {
+                      "type": "identifier",
+                      "name": "cy"
+                    }
+                  ]
+                }
+              },
+              {
+                "type": "expression",
+                "expr": {
+                  "type": "call",
+                  "callee": "printchars",
+                  "arguments": [
+                    {
+                      "type": "ternary",
+                      "test": {
+                        "type": "binary",
+                        "operator": ">",
+                        "left": {
+                          "type": "identifier",
+                          "name": "m"
+                        },
+                        "right": {
+                          "type": "literal",
+                          "value": 0
+                        }
+                      },
+                      "consequent": {
+                        "type": "literal",
+                        "value": "*"
+                      },
+                      "alternate": {
+                        "type": "literal",
+                        "value": " "
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "type": "expression",
+                "expr": {
+                  "type": "identifier",
+                  "name": "end"
+                }
+              },
+              {
+                "type": "expression",
+                "expr": {
+                  "type": "call",
+                  "callee": "printlf",
+                  "arguments": []
+                }
+              },
+              {
+                "type": "expression",
+                "expr": {
+                  "type": "identifier",
+                  "name": "end"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

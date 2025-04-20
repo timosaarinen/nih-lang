@@ -10,6 +10,7 @@ import json
 import sys
 import parser
 import sexpr
+import interpreter
 #from parser import Section, File, Project
 
 def main():
@@ -33,7 +34,9 @@ def main():
         print(json.dumps(project.to_dict(), indent=2))
         return
 
-    # TODO: execute project
+    # execute project
+    interp = interpreter.Interpreter()
+    interp.run(project)
 
 
 if __name__ == "__main__":
