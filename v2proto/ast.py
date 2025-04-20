@@ -55,6 +55,10 @@ def flush_section(current_file, buffer, mode):
     if not buffer:
         return
     content = "".join(buffer)
+    # skip empty markdown sections
+    if mode == "markdown" and not content.strip():
+        buffer.clear()
+        return
     if mode == "markdown":
         current_file.sections.append(Section("markdown", content))
     else:

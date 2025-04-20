@@ -1,0 +1,9 @@
+#file name="simple.nih" lang="nih-block"
+
+Prints the answer.
+
+#code
+print(6*7)
+#end code
+
+#end file
