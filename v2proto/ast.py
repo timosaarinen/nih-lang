@@ -16,7 +16,7 @@ class Section:
     def to_dict(self):
         if self.kind == "markdown":
             return {"kind": self.kind, "text": self.text}
-        return {"kind": self.kind, "source": self.text}
+        return {"kind": self.kind, "source": self.text, "ast": parse_code(self.text)}
 
 class File:
     def __init__(self, name, lang=None):
@@ -97,6 +97,128 @@ def parse_document(src):
         flush_section(current_file, buffer, mode)
         project.files.append(current_file)
     return project
+
+
+def parse_code(source):
+    """Parse code string into an AST."""
+    # Remove line comments
+    src = '\n'.join([re.sub(r'//.*', '', line) for line in source.splitlines()])
+    lines = src.splitlines()
+    return {"type": "program", "body": parse_statements(lines)}
+
+
+def parse_statements(lines):
+    statements = []
+    idx = 0
+    while idx < len(lines):
+        line = lines[idx].strip()
+        if not line:
+            idx += 1
+            continue
+        # Function definition
+        if line.startswith("fun "):
+            m = re.match(r"fun\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(([^)]*)\)\s*(?::\s*([^ \t]+))?", line)
+            name = m.group(1) if m else ""
+            params_str = m.group(2) if m else ""
+            ret = m.group(3) if m and m.group(3) else None
+            params = []
+            if params_str:
+                for p in params_str.split(","):
+                    parts = p.split(":")
+                    if len(parts) == 2:
+                        params.append({"name": parts[0].strip(), "type": parts[1].strip()})
+            idx += 1
+            body_lines = []
+            nest = 1
+            while idx < len(lines) and nest > 0:
+                l = lines[idx].strip()
+                if l.startswith("fun "):
+                    nest += 1
+                    body_lines.append(lines[idx])
+                elif l == "end":
+                    nest -= 1
+                    if nest == 0:
+                        break
+                    else:
+                        body_lines.append(lines[idx])
+                else:
+                    body_lines.append(lines[idx])
+                idx += 1
+            body = parse_statements(body_lines)
+            statements.append({"type": "function", "name": name, "params": params, "returnType": ret, "body": body})
+            idx += 1
+            continue
+        # While loop
+        if line.startswith("while "):
+            cond = line[len("while "):].strip()
+            if cond.endswith(" do"):
+                cond = cond[:-3].strip()
+            idx += 1
+            body_lines = []
+            nest = 1
+            while idx < len(lines) and nest > 0:
+                l = lines[idx].strip()
+                if l.startswith("while "):
+                    nest += 1
+                    body_lines.append(lines[idx])
+                elif l == "end":
+                    nest -= 1
+                    if nest == 0:
+                        break
+                    else:
+                        body_lines.append(lines[idx])
+                else:
+                    body_lines.append(lines[idx])
+                idx += 1
+            body = parse_statements(body_lines)
+            statements.append({"type": "while", "test": cond, "body": body})
+            idx += 1
+            continue
+        # If statement
+        if line.startswith("if "):
+            cond = line[len("if "):].strip()
+            if cond.endswith(" then"):
+                cond = cond[:-5].strip()
+            idx += 1
+            body_lines = []
+            nest = 1
+            while idx < len(lines) and nest > 0:
+                l = lines[idx].strip()
+                if l.startswith("if "):
+                    nest += 1
+                    body_lines.append(lines[idx])
+                elif l == "end":
+                    nest -= 1
+                    if nest == 0:
+                        break
+                    else:
+                        body_lines.append(lines[idx])
+                else:
+                    body_lines.append(lines[idx])
+                idx += 1
+            body = parse_statements(body_lines)
+            statements.append({"type": "if", "test": cond, "body": body})
+            idx += 1
+            continue
+        # Return statement
+        if line.startswith("return"):
+            val = line[len("return"):].strip()
+            statements.append({"type": "return", "value": val})
+            idx += 1
+            continue
+        # Assignment or expression
+        parts = lines[idx].split(";")
+        for part in parts:
+            p = part.strip()
+            if not p:
+                continue
+            if "=" in p:
+                lhs, rhs = p.split("=", 1)
+                statements.append({"type": "assignment", "left": lhs.strip(), "right": rhs.strip()})
+            else:
+                statements.append({"type": "expression", "expr": p})
+        idx += 1
+    return statements
 
 
 def main():
