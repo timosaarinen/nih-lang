@@ -107,6 +107,124 @@ def parse_code(source):
     return {"type": "program", "body": parse_statements(lines)}
 
 
+def parse_expression(expr):
+    expr = expr.strip()
+    if not expr:
+        return None
+    token_specification = [
+        ('NUMBER',   r'\d+(\.\d*)?'),
+        ('STRING',   r"'[^']*'"),
+        ('IDENT',    r'[A-Za-z_][A-Za-z0-9_]*'),
+        ('OP',       r'\+|\-|\*|\/|>=|<=|==|!=|>|<|\?|:'),
+        ('LPAREN',   r'\('),
+        ('RPAREN',   r'\)'),
+        ('COMMA',    r','),
+        ('SKIP',     r'[ \t]+'),
+    ]
+    tok_regex = '|'.join('(?P<%s>%s)' % pair for pair in token_specification)
+    tokens = []
+    for mo in re.finditer(tok_regex, expr):
+        kind = mo.lastgroup
+        value = mo.group(kind)
+        if kind == 'NUMBER':
+            tokens.append(('NUMBER', float(value) if '.' in value else int(value)))
+        elif kind == 'STRING':
+            tokens.append(('STRING', value[1:-1]))
+        elif kind == 'IDENT':
+            tokens.append(('IDENT', value))
+        elif kind == 'OP':
+            tokens.append(('OP', value))
+        elif kind in ('LPAREN', 'RPAREN', 'COMMA'):
+            tokens.append((kind, value))
+        elif kind == 'SKIP':
+            continue
+        else:
+            raise SyntaxError(f'Unknown token {value}')
+    tokens.append(('EOF', None))
+
+    pos = 0
+    def peek():
+        return tokens[pos]
+    def advance():
+        nonlocal pos
+        tok = tokens[pos]
+        pos += 1
+        return tok
+    def expect(kind, value=None):
+        tok = peek()
+        if tok[0] != kind or (value is not None and tok[1] != value):
+            raise SyntaxError(f'Expected {kind} {value}, got {tok}')
+        return advance()
+    def parse_primary():
+        tok = peek()
+        if tok[0] == 'NUMBER':
+            advance()
+            return {'type': 'literal', 'value': tok[1]}
+        if tok[0] == 'STRING':
+            advance()
+            return {'type': 'literal', 'value': tok[1]}
+        if tok[0] == 'IDENT':
+            advance()
+            name = tok[1]
+            if peek()[0] == 'LPAREN':
+                advance()
+                args = []
+                if peek()[0] != 'RPAREN':
+                    while True:
+                        args.append(parse_expression_inner())
+                        if peek()[0] == 'COMMA':
+                            advance()
+                            continue
+                        break
+                expect('RPAREN')
+                return {'type': 'call', 'callee': name, 'arguments': args}
+            return {'type': 'identifier', 'name': name}
+        if tok[0] == 'LPAREN':
+            advance()
+            node = parse_expression_inner()
+            expect('RPAREN')
+            return node
+        if tok[0] == 'OP' and tok[1] == '-':
+            advance()
+            operand = parse_primary()
+            return {'type': 'unary', 'operator': '-', 'operand': operand}
+        raise SyntaxError(f'Unexpected token {tok}')
+    def parse_multiplicative():
+        node = parse_primary()
+        while peek()[0] == 'OP' and peek()[1] in ('*','/'):
+            op = advance()[1]
+            right = parse_primary()
+            node = {'type': 'binary', 'operator': op, 'left': node, 'right': right}
+        return node
+    def parse_additive():
+        node = parse_multiplicative()
+        while peek()[0] == 'OP' and peek()[1] in ('+','-'):
+            op = advance()[1]
+            right = parse_multiplicative()
+            node = {'type': 'binary', 'operator': op, 'left': node, 'right': right}
+        return node
+    def parse_comparison():
+        node = parse_additive()
+        if peek()[0] == 'OP' and peek()[1] in ('>','<','>=','<=','==','!='):
+            op = advance()[1]
+            right = parse_additive()
+            node = {'type': 'binary', 'operator': op, 'left': node, 'right': right}
+        return node
+    def parse_ternary():
+        node = parse_comparison()
+        if peek()[0] == 'OP' and peek()[1] == '?':
+            advance()
+            true_expr = parse_expression_inner()
+            expect('OP', ':')
+            false_expr = parse_expression_inner()
+            node = {'type': 'ternary', 'test': node, 'consequent': true_expr, 'alternate': false_expr}
+        return node
+    def parse_expression_inner():
+        return parse_ternary()
+
+    return parse_expression_inner()
+
+
 def parse_statements(lines):
     statements = []
     idx = 0
@@ -203,7 +321,7 @@ def parse_statements(lines):
         # Return statement
         if line.startswith("return"):
             val = line[len("return"):].strip()
-            statements.append({"type": "return", "value": val})
+            statements.append({"type": "return", "value": parse_expression(val)})
             idx += 1
             continue
         # Assignment or expression
@@ -212,11 +330,23 @@ def parse_statements(lines):
             p = part.strip()
             if not p:
                 continue
-            if "=" in p:
-                lhs, rhs = p.split("=", 1)
-                statements.append({"type": "assignment", "left": lhs.strip(), "right": rhs.strip()})
+            # Handle augmented assignments first
+            aug_map = {'+=': '+', '-=': '-', '*=': '*', '/=': '/'}
+            for op, binop in aug_map.items():
+                if op in p:
+                    lhs_str, rhs_str = p.split(op, 1)
+                    lhs_node = parse_expression(lhs_str.strip())
+                    rhs_node = parse_expression(rhs_str.strip())
+                    # transform to lhs = lhs binop rhs
+                    new_rhs = {'type': 'binary', 'operator': binop, 'left': lhs_node, 'right': rhs_node}
+                    statements.append({'type': 'assignment', 'left': lhs_node, 'right': new_rhs})
+                    break
             else:
-                statements.append({"type": "expression", "expr": p})
+                if '=' in p:
+                    lhs_str, rhs_str = p.split('=', 1)
+                    statements.append({'type': 'assignment', 'left': parse_expression(lhs_str.strip()), 'right': parse_expression(rhs_str.strip())})
+                else:
+                    statements.append({'type': 'expression', 'expr': parse_expression(p)})
         idx += 1
     return statements
 
