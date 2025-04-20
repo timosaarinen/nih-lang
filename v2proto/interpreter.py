@@ -8,7 +8,8 @@ class ReturnException(Exception):
         self.value = value
 
 class Interpreter:
-    def __init__(self):
+    def __init__(self, debug=False):
+        self.debug = debug
         self.globals = {}
         self.functions = {}
         self.builtins = {
@@ -34,6 +35,8 @@ class Interpreter:
             self._eval_statement(stmt, env)
 
     def _eval_statement(self, stmt, env):
+        if self.debug:
+            print("Executing stmt:", stmt)
         t = stmt['type']
         if t == 'function':
             self.functions[stmt['name']] = stmt
@@ -62,6 +65,8 @@ class Interpreter:
         raise RuntimeError(f'Unknown statement type: {t}')
 
     def _eval_expression(self, expr, env):
+        if self.debug:
+            print("Evaluating expr:", expr)
         if expr is None:
             return None
         t = expr['type']

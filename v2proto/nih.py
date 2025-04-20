@@ -18,6 +18,7 @@ def main():
     argparser.add_argument("file", help="Path to NIH file")
     argparser.add_argument("--sexpr", action="store_true", help="Output AST in S-expression format (markdown as comments)")
     argparser.add_argument("--ast", action="store_true", help="Output AST in JSON format")
+    argparser.add_argument("--debug", action="store_true", help="Print debug execution steps")
     args = argparser.parse_args()
     try:
         with open(args.file, "r", encoding="utf-8") as f:
@@ -35,7 +36,7 @@ def main():
         return
 
     # execute project
-    interp = interpreter.Interpreter()
+    interp = interpreter.Interpreter(debug=args.debug)
     interp.run(project)
 
 
