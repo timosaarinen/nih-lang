@@ -1,0 +1,49 @@
+#file name="src/mandelbrot.nih" lang="nih-block"
+
+# Mandelbrot Set Visualization
+
+Compute the escape count for each point and render ASCII art.
+
+#code
+fun mandelbrot(cx: Float, cy: Float): Int
+  maxiters = 80
+  zx = 0.0; zy = 0.0; n = 0
+
+  while n < maxiters do
+    px = zx*zx - zy*zy
+    py = 2 * zx * zy
+    zx = px + cx
+    zy = py + cy
+
+    if sqrt(zx*zx + zy*zy) > 2 then
+      return 0    // escaped immediately
+    end
+
+    n += 1
+  end
+
+  return n
+end
+#end code
+
+## Setup & Render Loop
+
+Define grid dimensions and bounds, then draw the set row by row.
+
+#code
+WIDTH  = 40; HEIGHT = 20
+rs = -2.0; re = 1.0
+is = -1.0; ie = 1.0
+
+for j = 0, HEIGHT - 1 do
+  for i = 0, WIDTH - 1 do
+    cx = rs + (i / (WIDTH - 1)) * (re - rs)
+    cy = is + (j / (HEIGHT - 1)) * (ie - is)
+    m  = mandelbrot(cx, cy)
+    printchars(m > 0 ? '*' : ' ')
+  end
+  printlf()
+end
+#end code
+
+#end file
