@@ -75,7 +75,18 @@
                   },
                   {
                     "type": "while",
-                    "test": "n < maxiters",
+                    "test": {
+                      "type": "binary",
+                      "operator": "<",
+                      "left": {
+                        "type": "identifier",
+                        "name": "n"
+                      },
+                      "right": {
+                        "type": "identifier",
+                        "name": "maxiters"
+                      }
+                    },
                     "body": [
                       {
                         "type": "assignment",
@@ -179,7 +190,48 @@
                       },
                       {
                         "type": "if",
-                        "test": "sqrt(zx*zx + zy*zy) > 2",
+                        "test": {
+                          "type": "binary",
+                          "operator": ">",
+                          "left": {
+                            "type": "call",
+                            "callee": "sqrt",
+                            "arguments": [
+                              {
+                                "type": "binary",
+                                "operator": "+",
+                                "left": {
+                                  "type": "binary",
+                                  "operator": "*",
+                                  "left": {
+                                    "type": "identifier",
+                                    "name": "zx"
+                                  },
+                                  "right": {
+                                    "type": "identifier",
+                                    "name": "zx"
+                                  }
+                                },
+                                "right": {
+                                  "type": "binary",
+                                  "operator": "*",
+                                  "left": {
+                                    "type": "identifier",
+                                    "name": "zy"
+                                  },
+                                  "right": {
+                                    "type": "identifier",
+                                    "name": "zy"
+                                  }
+                                }
+                              }
+                            ]
+                          },
+                          "right": {
+                            "type": "literal",
+                            "value": 2
+                          }
+                        },
                         "body": [
                           {
                             "type": "return",
@@ -189,50 +241,36 @@
                             }
                           }
                         ]
+                      },
+                      {
+                        "type": "assignment",
+                        "left": {
+                          "type": "identifier",
+                          "name": "n"
+                        },
+                        "right": {
+                          "type": "binary",
+                          "operator": "+",
+                          "left": {
+                            "type": "identifier",
+                            "name": "n"
+                          },
+                          "right": {
+                            "type": "literal",
+                            "value": 1
+                          }
+                        }
                       }
                     ]
+                  },
+                  {
+                    "type": "return",
+                    "value": {
+                      "type": "identifier",
+                      "name": "n"
+                    }
                   }
                 ]
-              },
-              {
-                "type": "assignment",
-                "left": {
-                  "type": "identifier",
-                  "name": "n"
-                },
-                "right": {
-                  "type": "binary",
-                  "operator": "+",
-                  "left": {
-                    "type": "identifier",
-                    "name": "n"
-                  },
-                  "right": {
-                    "type": "literal",
-                    "value": 1
-                  }
-                }
-              },
-              {
-                "type": "expression",
-                "expr": {
-                  "type": "identifier",
-                  "name": "end"
-                }
-              },
-              {
-                "type": "return",
-                "value": {
-                  "type": "identifier",
-                  "name": "n"
-                }
-              },
-              {
-                "type": "expression",
-                "expr": {
-                  "type": "identifier",
-                  "name": "end"
-                }
               }
             ]
           }

@@ -249,7 +249,7 @@ def parse_statements(lines):
             nest = 1
             while idx < len(lines) and nest > 0:
                 l = lines[idx].strip()
-                if l.startswith("fun "):
+                if l.startswith("fun ") or l.startswith("while ") or l.startswith("if "):
                     nest += 1
                     body_lines.append(lines[idx])
                 elif l == "end":
@@ -275,7 +275,7 @@ def parse_statements(lines):
             nest = 1
             while idx < len(lines) and nest > 0:
                 l = lines[idx].strip()
-                if l.startswith("while "):
+                if l.startswith("while ") or l.startswith("if "):
                     nest += 1
                     body_lines.append(lines[idx])
                 elif l == "end":
@@ -288,7 +288,7 @@ def parse_statements(lines):
                     body_lines.append(lines[idx])
                 idx += 1
             body = parse_statements(body_lines)
-            statements.append({"type": "while", "test": cond, "body": body})
+            statements.append({"type": "while", "test": parse_expression(cond), "body": body})
             idx += 1
             continue
         # If statement
@@ -301,7 +301,7 @@ def parse_statements(lines):
             nest = 1
             while idx < len(lines) and nest > 0:
                 l = lines[idx].strip()
-                if l.startswith("if "):
+                if l.startswith("if ") or l.startswith("while "):
                     nest += 1
                     body_lines.append(lines[idx])
                 elif l == "end":
@@ -314,7 +314,7 @@ def parse_statements(lines):
                     body_lines.append(lines[idx])
                 idx += 1
             body = parse_statements(body_lines)
-            statements.append({"type": "if", "test": cond, "body": body})
+            statements.append({"type": "if", "test": parse_expression(cond), "body": body})
             idx += 1
             continue
         # Return statement
