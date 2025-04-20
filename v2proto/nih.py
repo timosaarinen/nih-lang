@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Parse NIH-formatted document and execute all code sections of it in order with a tree-walking interpreter.
-Can also output AST in JSON or S-expression format.
+Enter REPL with no file specified or parse NIH-formatted document and execute all code sections
+in order with a tree-walking interpreter. Can also output AST in JSON or S-expression format.
 
-Usage: uv run nih.py [--sexpr | --ast] <file>
+Usage: uv run nih.py [--sexpr | --ast] [file]
 """
 import argparse
 import json
@@ -13,13 +13,44 @@ import sexpr
 import interpreter
 #from parser import Section, File, Project
 
+def repl_mode(args):
+  interp = interpreter.Interpreter(debug=args.debug)
+  print("NIH REPL. Type quit() or exit() to quit.")
+  env = interp.globals
+  while True:
+      try:
+          line = input(">>> ")
+      except (EOFError, KeyboardInterrupt):
+          print()
+          break
+      if not line.strip() or line.strip() in ("exit()", "quit()"):
+          break
+      try:
+          prog = parser.parse_code(line)
+          body = prog["body"]
+          # single‐expression -> eval & print
+          if len(body)==1 and body[0]["type"]=="expression":
+              val = interp._eval_expression(body[0]["expr"], env)
+              if val is not None:
+                  print(val)
+          else:
+              interp._eval_statements(body, env)
+      except Exception as e:
+          print("Error:", e)
+  return
+
 def main():
     argparser = argparse.ArgumentParser(description="Run NIH file")
-    argparser.add_argument("file", help="Path to NIH file")
+    argparser.add_argument("file", nargs="?", help="Path to NIH file (optional in REPL mode)")
     argparser.add_argument("--sexpr", action="store_true", help="Output AST in S-expression format (markdown as comments)")
     argparser.add_argument("--ast", action="store_true", help="Output AST in JSON format")
     argparser.add_argument("--debug", action="store_true", help="Print debug execution steps")
     args = argparser.parse_args()
+
+    if not args.file:
+        repl_mode(args)
+        return
+
     try:
         with open(args.file, "r", encoding="utf-8") as f:
             src = f.read()
