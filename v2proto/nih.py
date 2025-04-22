@@ -3,7 +3,7 @@
 Enter REPL with no file specified or parse NIH-formatted document and execute all code sections
 in order with a tree-walking interpreter. Can also output AST in JSON or S-expression format.
 
-Usage: uv run nih.py [--sexpr | --ast] [file]
+Usage: uv run nih.py [--sexpr | --ast | --compile-js] [file]
 """
 import argparse
 import json
@@ -11,6 +11,7 @@ import sys
 import parser
 import sexpr
 import interpreter
+import js_codegen
 #from parser import Section, File, Project
 
 def repl_mode(args):
@@ -44,6 +45,9 @@ def main():
     argparser.add_argument("file", nargs="?", help="Path to NIH file (optional in REPL mode)")
     argparser.add_argument("--sexpr", action="store_true", help="Output AST in S-expression format (markdown as comments)")
     argparser.add_argument("--ast", action="store_true", help="Output AST in JSON format")
+    argparser.add_argument("--compile-js", action="store_true", help="Generate JavaScript code")
+    argparser.add_argument("--js-target", choices=["node","browser"], default="node", help="JavaScript target platform (node or browser)")
+    argparser.add_argument("--out", help="Output file for compiled code (default: stdout)")
     argparser.add_argument("--debug", action="store_true", help="Print debug execution steps")
     args = argparser.parse_args()
 
@@ -64,6 +68,14 @@ def main():
         return
     if getattr(args, 'ast', False):
         print(json.dumps(project.to_dict(), indent=2))
+        return
+    if getattr(args, 'compile_js', False):
+        code = js_codegen.emit_js(project.to_dict(), args.js_target)
+        if args.out:
+            with open(args.out, "w", encoding="utf-8") as f:
+                f.write(code)
+        else:
+            print(code)
         return
 
     # execute project
