@@ -3,9 +3,16 @@
         print: function(s) { process.stdout.write(String(s)); },
         sqrt: Math.sqrt
     };
+    let j;
+    const WIDTH = 40;
+    const HEIGHT = 20;
+    const rs = -2.0;
+    const re = 1.0;
+    const is = -1.0;
+    const ie = 1.0;
     function mandelbrot(cx, cy) {
-        let px, zx, py, n, maxiters, zy;
-        maxiters = 80;
+        const maxiters = 80;
+        let px, zx, n, zy, py;
         zx = 0.0;
         zy = 0.0;
         n = 0;
@@ -21,12 +28,6 @@
         }
         return n;
     }
-    let WIDTH = 40;
-    let HEIGHT = 20;
-    let rs = -2.0;
-    let re = 1.0;
-    let is = -1.0;
-    let ie = 1.0;
     for (let j = 0; j <= (HEIGHT - 1); j++) {
         for (let i = 0; i <= (WIDTH - 1); i++) {
             let cx = (rs + ((i / (WIDTH - 1)) * (re - rs)));

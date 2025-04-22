@@ -48,8 +48,32 @@ class JSCodeGen:
             lines.append('        print: function(s) { process.stdout.write(String(s)); },')
             lines.append('        sqrt: Math.sqrt')
             lines.append('    };')
+        # Pre-scan for top-level assignments
+        stmts = program.get('body', [])
+        # Only consider assignments at the top level
+        top_assigns = [s for s in stmts if s.get('type') == 'assignment']
+        assignment_counts = {}
+        for s in top_assigns:
+            name = s['left']['name']
+            assignment_counts[name] = assignment_counts.get(name, 0) + 1
+        # Loop variables at top level
+        for_vars = [s.get('var') for s in stmts if s.get('type') == 'for']
+        # Globals: assigned names and for-loop counters
+        globals_ = set(assignment_counts.keys()) | set(for_vars)
+        # Immutable: assigned once and not loop counters
+        immutable_globals = [v for v, c in assignment_counts.items() if c == 1 and v not in for_vars]
+        mutable_globals = [v for v in globals_ if v not in immutable_globals]
+        # Separate initial values and remaining statements
+        initial_values = {s['left']['name']: s['right'] for s in top_assigns if s['left']['name'] in immutable_globals}
+        new_stmts = [s for s in stmts if not (s.get('type') == 'assignment' and s['left']['name'] in immutable_globals)]
+        # Emit global declarations
+        if mutable_globals:
+            lines.append('    let ' + ', '.join(mutable_globals) + ';')
+        for v in immutable_globals:
+            expr = self.emit_expr(initial_values[v])
+            lines.append(f'    const {v} = {expr};')
         # Emit each top-level statement
-        for stmt in program.get('body', []):
+        for stmt in new_stmts:
             for line in self.emit_statement(stmt, indent=1):
                 lines.append(line)
         lines.append('})();')
@@ -108,24 +132,53 @@ class JSCodeGen:
         ind = '    ' * indent
         name = stmt.get('name')
         params = [p['name'] for p in stmt.get('params', [])]
-        lines = []
-        # Pre-scan for local variable declarations
-        locals_ = self.collect_locals(stmt.get('body', []))
+        # Pre-scan function body
+        body = stmt.get('body', [])
+        locals_ = self.collect_locals(body)
         params_set = set(params)
-        locals_to_declare = [v for v in locals_ if v not in params_set]
-        # track current locals for this function
+        # Counts of assignments per identifier
+        assignment_counts = self.count_assignments(body)
+        # Loop counters
+        for_vars = self.collect_for_vars(body)
+        # Variables assigned inside any loop body
+        loop_assigned = self.collect_loop_assigned(body)
+        # Determine immutable (assigned once outside loops) and mutable locals
+        immutable_locals = [v for v in locals_ if v not in params_set and assignment_counts.get(v, 0) == 1 and v not in for_vars and v not in loop_assigned]
+        mutable_locals = [v for v in locals_ if v not in params_set and v not in immutable_locals]
+        # Partition body to extract initial values and remove immutable assignments
+        initial_values = {}
+        def partition(stmts):
+            new = []
+            for s in stmts:
+                if s.get('type') == 'assignment' and s['left']['name'] in immutable_locals:
+                    initial_values[s['left']['name']] = s['right']
+                elif s.get('type') in ('if', 'while', 'for'):
+                    s_copy = dict(s)
+                    s_copy['body'] = partition(s.get('body', []))
+                    new.append(s_copy)
+                else:
+                    new.append(s)
+            return new
+        new_body = partition(body)
+        # Emit function signature
+        lines = [f"{ind}function {name}({', '.join(params)}) {{"]
+        # Emit const declarations for immutable locals
+        for v in immutable_locals:
+            expr = self.emit_expr(initial_values[v])
+            lines.append(f"{ind}    const {v} = {expr};")
+        # Emit let declarations for mutable locals
+        if mutable_locals:
+            lines.append(f"{ind}    let {', '.join(mutable_locals)};")
+        # Set current locals for nested assignments
         old_locals = getattr(self, 'current_locals', None)
-        self.current_locals = set(locals_to_declare)
-        # Function declaration
-        lines.append(f"{ind}function {name}({', '.join(params)}) {{")
-        # Declare locals at top
-        if locals_to_declare:
-            lines.append(f"{ind}    let {', '.join(locals_to_declare)};")
-        # Body statements
-        for s in stmt.get('body', []):
-            lines.extend(self.emit_statement(s, indent+1))
+        self.current_locals = set(mutable_locals)
+        # Emit body
+        for s in new_body:
+            for line in self.emit_statement(s, indent+1):
+                lines.append(line)
+        # Close function
         lines.append(f"{ind}}}")
-        # restore previous locals
+        # Restore previous current_locals
         if old_locals is None:
             delattr(self, 'current_locals')
         else:
@@ -147,6 +200,44 @@ class JSCodeGen:
                 names |= self.collect_locals(stmt.get('body', []))
             # nested functions are not scanned
         return names
+
+    def count_assignments(self, stmts):
+        counts = {}
+        for stmt in stmts:
+            t = stmt.get('type')
+            if t == 'assignment':
+                left = stmt['left']
+                if left.get('type') == 'identifier':
+                    name = left.get('name')
+                    counts[name] = counts.get(name, 0) + 1
+            elif t in ('if', 'while', 'for'):
+                # recurse into bodies of control-flow statements
+                nested_counts = self.count_assignments(stmt.get('body', []))
+                for k, v in nested_counts.items():
+                    counts[k] = counts.get(k, 0) + v
+        return counts
+
+    def collect_for_vars(self, stmts):
+        vars_ = set()
+        for stmt in stmts:
+            t = stmt.get('type')
+            if t == 'for':
+                vars_.add(stmt.get('var'))
+            elif t in ('if', 'while'):
+                vars_ |= self.collect_for_vars(stmt.get('body', []))
+        return vars_
+
+    def collect_loop_assigned(self, stmts):
+        assigned = set()
+        for s in stmts:
+            t = s.get('type')
+            if t in ('for', 'while'):
+                body = s.get('body', [])
+                assigned |= self.collect_locals(body)
+                assigned |= self.collect_loop_assigned(body)
+            elif t == 'if':
+                assigned |= self.collect_loop_assigned(s.get('body', []))
+        return assigned
 
     def emit_expr(self, expr):
         if expr is None:
