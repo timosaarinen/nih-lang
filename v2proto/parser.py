@@ -128,7 +128,10 @@ def parse_expression(expr):
         if kind == 'NUMBER':
             tokens.append(('NUMBER', float(value) if '.' in value else int(value)))
         elif kind == 'STRING':
-            tokens.append(('STRING', value[1:-1]))
+            # decode escape sequences in string literal
+            raw = value[1:-1]
+            decoded = bytes(raw, 'utf-8').decode('unicode_escape')
+            tokens.append(('STRING', decoded))
         elif kind == 'IDENT':
             tokens.append(('IDENT', value))
         elif kind == 'OP':

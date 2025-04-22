@@ -1,19 +1,23 @@
 (function() {
+    const stdlib = {
+        print: function(s) { process.stdout.write(String(s)); },
+        sqrt: Math.sqrt
+    };
     function mandelbrot(cx, cy) {
-        let maxiters, py, n, zx, zy, px;
-        let maxiters = 80;
-        let zx = 0.0;
-        let zy = 0.0;
-        let n = 0;
+        let px, zx, py, n, maxiters, zy;
+        maxiters = 80;
+        zx = 0.0;
+        zy = 0.0;
+        n = 0;
         while ((n < maxiters)) {
-            let px = ((zx * zx) - (zy * zy));
-            let py = ((2 * zx) * zy);
-            let zx = (px + cx);
-            let zy = (py + cy);
-            if ((Math.sqrt(((zx * zx) + (zy * zy))) > 2)) {
+            px = ((zx * zx) - (zy * zy));
+            py = ((2 * zx) * zy);
+            zx = (px + cx);
+            zy = (py + cy);
+            if ((stdlib.sqrt(((zx * zx) + (zy * zy))) > 2)) {
                 return 0;
             }
-            let n = (n + 1);
+            n = (n + 1);
         }
         return n;
     }
@@ -28,8 +32,8 @@
             let cx = (rs + ((i / (WIDTH - 1)) * (re - rs)));
             let cy = (is + ((j / (HEIGHT - 1)) * (ie - is)));
             let m = mandelbrot(cx, cy);
-            console.log(((m > 0) ? "*" : " "));
+            stdlib.print(((m > 0) ? "*" : " "));
         }
-        console.log("\\n");
+        stdlib.print("\n");
     }
 })();

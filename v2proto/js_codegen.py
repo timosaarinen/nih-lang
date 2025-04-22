@@ -3,8 +3,8 @@ import json
 # Mapping of NIH builtins to JavaScript equivalents
 enum = {}  # placeholder
 BUILTINS = {
-    'print': 'console.log',
-    'sqrt': 'Math.sqrt',
+    'print': 'stdlib.print',
+    'sqrt': 'stdlib.sqrt',
 }
 
 
@@ -36,8 +36,18 @@ class JSCodeGen:
         # Wrapper for browser or node
         if self.target == 'browser':
             lines.append('window.nih = (function() {')
+            # runtime stubs for print and sqrt
+            lines.append('    const stdlib = {')
+            lines.append('        print: function(s) { console.log(String(s)); },')
+            lines.append('        sqrt: Math.sqrt')
+            lines.append('    };')
         else:
             lines.append('(function() {')
+            # runtime stubs for print and sqrt
+            lines.append('    const stdlib = {')
+            lines.append('        print: function(s) { process.stdout.write(String(s)); },')
+            lines.append('        sqrt: Math.sqrt')
+            lines.append('    };')
         # Emit each top-level statement
         for stmt in program.get('body', []):
             for line in self.emit_statement(stmt, indent=1):
@@ -54,7 +64,11 @@ class JSCodeGen:
         elif t == 'assignment':
             left = stmt['left']['name']
             right = self.emit_expr(stmt['right'])
-            lines.append(f"{ind}let {left} = {right};")
+            # simple assignment if already declared as local
+            if hasattr(self, 'current_locals') and left in self.current_locals:
+                lines.append(f"{ind}{left} = {right};")
+            else:
+                lines.append(f"{ind}let {left} = {right};")
         elif t == 'expression':
             expr = self.emit_expr(stmt['expr'])
             lines.append(f"{ind}{expr};")
@@ -77,7 +91,11 @@ class JSCodeGen:
             var = stmt['var']
             start = self.emit_expr(stmt['start'])
             end = self.emit_expr(stmt['end'])
-            lines.append(f"{ind}for (let {var} = {start}; {var} <= {end}; {var}++) {{")
+            # avoid redeclaring loop var if already declared
+            if hasattr(self, 'current_locals') and var in self.current_locals:
+                lines.append(f"{ind}for ({var} = {start}; {var} <= {end}; {var}++) {{")
+            else:
+                lines.append(f"{ind}for (let {var} = {start}; {var} <= {end}; {var}++) {{")
             for s in stmt.get('body', []):
                 lines.extend(self.emit_statement(s, indent+1))
             lines.append(f"{ind}}}")
@@ -95,6 +113,9 @@ class JSCodeGen:
         locals_ = self.collect_locals(stmt.get('body', []))
         params_set = set(params)
         locals_to_declare = [v for v in locals_ if v not in params_set]
+        # track current locals for this function
+        old_locals = getattr(self, 'current_locals', None)
+        self.current_locals = set(locals_to_declare)
         # Function declaration
         lines.append(f"{ind}function {name}({', '.join(params)}) {{")
         # Declare locals at top
@@ -104,6 +125,11 @@ class JSCodeGen:
         for s in stmt.get('body', []):
             lines.extend(self.emit_statement(s, indent+1))
         lines.append(f"{ind}}}")
+        # restore previous locals
+        if old_locals is None:
+            delattr(self, 'current_locals')
+        else:
+            self.current_locals = old_locals
         return lines
 
     def collect_locals(self, stmts):
