@@ -1,0 +1,19 @@
+// Practical GPU smoke test: the NIH-generated functions below are called by
+// tiny WebGPU stage wrappers in runtime/web/gpu-demo.mjs.
+
+fn rotate2(p: vec2, angle: f32) -> vec2 {
+  c = cos(angle);
+  s = sin(angle);
+  vec2(c * p.x - s * p.y, s * p.x + c * p.y)
+}
+
+gpu fn triangle_vertex(local: vec2, time: f32, aspect: f32) -> vec4 {
+  p = rotate2(local, time * 0.85);
+  vec4(p.x / aspect, p.y, 0.0, 1.0)
+}
+
+gpu fn triangle_color(local: vec2, edge: f32, time: f32) -> vec4 {
+  pulse = 0.65 + 0.35 * sin(time * 2.0 + local.x * 5.0 - local.y * 3.0);
+  rim = saturate((0.055 - edge) * 18.0);
+  vec4(0.08 + 0.18 * pulse + rim * 0.55, 0.35 + 0.45 * pulse + rim * 0.35, 0.95, 1.0)
+}
