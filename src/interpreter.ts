@@ -16,7 +16,7 @@ function callFunction(program: CheckedProgram, fn: FunctionDecl, args: Value[]):
   const env = new Map<string, Cell>()
   fn.params.forEach((p, i) => env.set(p.name, { value: args[i], mutable: false }))
   const result = execBlock(program, fn.body, env)
-  return result.value
+  return result.returned ? result.value : result.value
 }
 
 function execBlock(program: CheckedProgram, stmts: Stmt[], env: Map<string, Cell>): { returned: boolean; value: Value } {
@@ -74,6 +74,9 @@ function callBuiltin(name: string, args: Value[]): { handled: boolean; value: Va
     case 'sin': return done(Math.sin(n(0)))
     case 'cos': return done(Math.cos(n(0)))
     case 'sqrt': return done(Math.sqrt(n(0)))
+    case 'floor': return done(mapUnary(args[0], Math.floor))
+    case 'fract': return done(mapUnary(args[0], x => x - Math.floor(x)))
+    case 'pow': return done(mapBinary(args[0], args[1], Math.pow))
     case 'abs': return done(mapUnary(args[0], Math.abs))
     case 'min': return done(mapBinary(args[0], args[1], Math.min))
     case 'max': return done(mapBinary(args[0], args[1], Math.max))
@@ -81,7 +84,7 @@ function callBuiltin(name: string, args: Value[]): { handled: boolean; value: Va
     case 'saturate': return done(mapBinary(mapBinary(args[0], 0, Math.max), 1, Math.min))
     case 'lerp': return done(mapBinary(args[0], mapBinary(mapBinary(args[1], args[0], (a, b) => a - b), args[2], (a, b) => a * b), (a, b) => a + b))
     case 'dot': {
-      const a = asVector(args[0]); const b = asVector(args[1])
+      const a = asVector(args[0]); const b = asVector(args[1]);
       return done(a.reduce((sum, x, i) => sum + x * (b[i] ?? 0), 0))
     }
     case 'length': return done(Math.sqrt(asVector(args[0]).reduce((sum, x) => sum + x * x, 0)))
