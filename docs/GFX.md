@@ -1,41 +1,78 @@
-# Graphics/runtime: OpenGL2030 absorbed into NIH
+# NIH graphics runtime
 
-`opengl2030` explored a small backend-neutral rendering layer for browser and native code. NIH v2 folds the useful architectural ideas into the language/runtime instead of maintaining a second parallel abstraction project.
+OpenGL2030 is folded into NIH as a deliberately small host/runtime layer. The language owns numeric types, vector math, swizzles and GPU-portable functions; the runtime owns windows/canvases, devices, frame timing, resources, command submission and backend-specific plumbing.
 
-## Keep
+## Bootstrap architecture
 
-- tiny API surface
-- WebGPU / native backend boundary hidden from application code
-- command recording before backend submission
+```text
+NIH source
+   |
+   +--> parser/checker --> CPU interpreter
+   |
+   +--> parser/checker --> WGSL emitter --> tiny WebGPU stage wrapper --> GPU
+
+host runtime
+   |
+   +--> frame state / uniforms
+   +--> WebGPU device/canvas
+   +--> command submission
+   +--> null backend for headless tests
+```
+
+The practical GPU demos intentionally use tiny handwritten WGSL wrappers for WebGPU entry-point builtins while all reusable math/render logic is generated from NIH. This avoids designing stage annotations before real rendering pressure tells us what NIH actually needs.
+
+## Current demos
+
+Build generated shaders:
+
+```bash
+npm run build:demos
+```
+
+Then serve `runtime/web` from any local HTTP server and open:
+
+- `triangle.html` — rotating triangle
+- `portal.html` — same triangle with procedural tunnel/portal fragment logic
+
+The wrappers pass `time`, `aspect`, dimensions, vertex-local coordinates and barycentrics into NIH-generated functions.
+
+## What survives from OpenGL2030
+
+- very small graphics surface
+- command/display-list mindset before backend submission
+- backend isolation
 - frame state (`time`, `dt`, dimensions, frame number)
-- null backend for tests and headless tooling
-- shader-friendly vector/math vocabulary
-- browser and native hosts sharing concepts
+- null/headless backend
+- shader-friendly math ergonomics
+- browser/native hosts sharing concepts
 
-## Change
-
-The old project had to duplicate vector types, swizzles, uniforms and shader concepts in JavaScript/C because the host language and shader language were separate. NIH removes that duplication: vectors, swizzles and GPU-portable functions are language features.
-
-The runtime should therefore be intentionally boring. It owns windows/canvases, devices, resources, queues, synchronization and presentation. It should not reinvent math or create another shader DSL.
+What does **not** survive is parallel JS/C/shader math implementations. That code belongs in NIH once.
 
 ## Direction
 
-WebGPU is the first bootstrap GPU API because WGSL gives the compiler a concrete target and WebGPU maps cleanly to modern explicit GPU concepts. Native Vulkan/Metal/D3D12 can follow behind the same runtime model. WebGL2 can exist as a compatibility backend if it earns its complexity.
+Near term:
 
-`runtime/web/gfx.mjs` is the first tiny host: WebGPU + null backend, a frame loop and command recording. It is intentionally not yet a production renderer.
+1. native NIH stage entry syntax after the demo requirements stabilize
+2. typed uniform/storage layouts generated from NIH structs
+3. vertex/index/storage buffers
+4. textures/samplers
+5. compute dispatch
+6. shader compilation diagnostics mapped back to NIH source
+7. GPU timestamp queries and capture harness
 
-Longer-term NIH source should be able to express something conceptually like:
+Later the host API should be expressible conceptually as:
 
 ```nih
-fn tonemap(c: vec3) -> vec3
-  c / (c + 1.0)
+fn tonemap(c: vec3) -> vec3 { c / (c + 1.0) }
 
-gpu fn pixel(uv: vec2, time: f32) -> vec4
-  c = render-scene(uv, time)
+gpu fn pixel(uv: vec2, time: f32) -> vec4 {
+  c = render_scene(uv, time);
   vec4(tonemap(c), 1.0)
+}
 
-cpu fn frame(gfx: gfx.Context)
-  gfx.draw(fullscreen, pixel)
+cpu fn frame(gfx: gfx.Context) {
+  gfx.draw(fullscreen, pixel);
+}
 ```
 
 The critical property is that `tonemap` is one function, not a CPU copy and shader copy kept approximately in sync.
