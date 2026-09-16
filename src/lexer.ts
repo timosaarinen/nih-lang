@@ -1,6 +1,6 @@
 export type TokenKind =
-  | 'name' | 'number' | 'string' | 'newline' | 'indent' | 'dedent' | 'eof'
-  | '(' | ')' | ',' | ':' | 'arrow' | '=' | ':=' | '.'
+  | 'name' | 'number' | 'string' | 'eof'
+  | '(' | ')' | '{' | '}' | ',' | ';' | ':' | 'arrow' | '=' | ':=' | '.'
   | '+' | '-' | '*' | '/' | '%' | '==' | '!=' | '<' | '<=' | '>' | '>=' | '&&' | '||' | '!'
 
 export interface Token {
@@ -11,100 +11,97 @@ export interface Token {
 }
 
 const twoChar = new Set(['->', ':=', '==', '!=', '<=', '>=', '&&', '||'])
-const oneChar = new Set(['(', ')', ',', ':', '=', '.', '+', '-', '*', '/', '%', '<', '>', '!'])
+const oneChar = new Set(['(', ')', '{', '}', ',', ';', ':', '=', '.', '+', '-', '*', '/', '%', '<', '>', '!'])
 
 export function lex(source: string): Token[] {
   const tokens: Token[] = []
-  const indents = [0]
-  const lines = source.replace(/\r\n?/g, '\n').split('\n')
+  let i = 0
+  let line = 1
+  let column = 1
 
-  for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
-    const raw = lines[lineIndex] ?? ''
-    const line = lineIndex + 1
-    if (/\t/.test(raw.match(/^\s*/)?.[0] ?? '')) throw new Error(`line ${line}: tabs are not allowed`)
-    const withoutComment = stripComment(raw)
-    if (withoutComment.trim() === '') continue
+  const push = (kind: TokenKind, text: string, startLine = line, startColumn = column) => {
+    tokens.push({ kind, text, line: startLine, column: startColumn })
+  }
+  const advance = () => {
+    const c = source[i++]
+    if (c === '\n') { line++; column = 1 }
+    else column++
+    return c
+  }
 
-    const indent = withoutComment.match(/^ */)?.[0].length ?? 0
-    const current = indents[indents.length - 1] ?? 0
-    if (indent > current) {
-      indents.push(indent)
-      tokens.push({ kind: 'indent', text: '', line, column: 1 })
-    } else if (indent < current) {
-      while (indent < (indents[indents.length - 1] ?? 0)) {
-        indents.pop()
-        tokens.push({ kind: 'dedent', text: '', line, column: 1 })
-      }
-      if (indent !== (indents[indents.length - 1] ?? 0)) throw new Error(`line ${line}: inconsistent indentation`)
+  while (i < source.length) {
+    const c = source[i]!
+
+    if (/\s/.test(c)) { advance(); continue }
+
+    if (c === '/' && source[i + 1] === '/') {
+      while (i < source.length && source[i] !== '\n') advance()
+      continue
     }
 
-    let i = indent
-    while (i < withoutComment.length) {
-      const c = withoutComment[i]!
-      if (c === ' ') { i++; continue }
-      const column = i + 1
-      const pair = withoutComment.slice(i, i + 2)
-      if (twoChar.has(pair)) {
-        tokens.push({ kind: pair === '->' ? 'arrow' : pair as TokenKind, text: pair, line, column })
-        i += 2
-        continue
-      }
-      if (oneChar.has(c)) {
-        tokens.push({ kind: c as TokenKind, text: c, line, column })
-        i++
-        continue
-      }
-      if (c === '"' || c === "'") {
-        const quote = c
-        i++
-        let value = ''
-        while (i < withoutComment.length && withoutComment[i] !== quote) {
-          if (withoutComment[i] === '\\') {
-            const n = withoutComment[++i]
-            if (n === undefined) throw new Error(`line ${line}: unterminated escape`)
-            value += n === 'n' ? '\n' : n === 't' ? '\t' : n
-            i++
-          } else {
-            value += withoutComment[i++]
-          }
+    if (c === '/' && source[i + 1] === '*') {
+      const startLine = line, startColumn = column
+      advance(); advance()
+      let closed = false
+      while (i < source.length) {
+        if (source[i] === '*' && source[i + 1] === '/') {
+          advance(); advance(); closed = true; break
         }
-        if (withoutComment[i] !== quote) throw new Error(`line ${line}: unterminated string`)
-        i++
-        tokens.push({ kind: 'string', text: value, line, column })
-        continue
+        advance()
       }
-      const number = withoutComment.slice(i).match(/^(?:\d+\.\d*|\d*\.\d+|\d+)(?:[eE][+-]?\d+)?/)
-      if (number) {
-        tokens.push({ kind: 'number', text: number[0], line, column })
-        i += number[0].length
-        continue
-      }
-      const name = withoutComment.slice(i).match(/^[A-Za-z_][A-Za-z0-9_-]*/)
-      if (name) {
-        tokens.push({ kind: 'name', text: name[0], line, column })
-        i += name[0].length
-        continue
-      }
-      throw new Error(`line ${line}:${column}: unexpected character ${JSON.stringify(c)}`)
+      if (!closed) throw new Error(`line ${startLine}:${startColumn}: unterminated block comment`)
+      continue
     }
-    tokens.push({ kind: 'newline', text: '', line, column: withoutComment.length + 1 })
+
+    const startLine = line, startColumn = column
+    const pair = source.slice(i, i + 2)
+    if (twoChar.has(pair)) {
+      advance(); advance()
+      push(pair === '->' ? 'arrow' : pair as TokenKind, pair, startLine, startColumn)
+      continue
+    }
+
+    if (oneChar.has(c)) {
+      advance()
+      push(c as TokenKind, c, startLine, startColumn)
+      continue
+    }
+
+    if (c === '"' || c === "'") {
+      const quote = advance()!
+      let value = ''
+      let closed = false
+      while (i < source.length) {
+        const ch = advance()!
+        if (ch === quote) { closed = true; break }
+        if (ch === '\\') {
+          if (i >= source.length) break
+          const n = advance()!
+          value += n === 'n' ? '\n' : n === 't' ? '\t' : n === 'r' ? '\r' : n
+        } else value += ch
+      }
+      if (!closed) throw new Error(`line ${startLine}:${startColumn}: unterminated string`)
+      push('string', value, startLine, startColumn)
+      continue
+    }
+
+    const number = source.slice(i).match(/^(?:\d+\.\d*|\d*\.\d+|\d+)(?:[eE][+-]?\d+)?/)
+    if (number) {
+      for (let n = 0; n < number[0].length; n++) advance()
+      push('number', number[0], startLine, startColumn)
+      continue
+    }
+
+    const name = source.slice(i).match(/^[A-Za-z_][A-Za-z0-9_]*/)
+    if (name) {
+      for (let n = 0; n < name[0].length; n++) advance()
+      push('name', name[0], startLine, startColumn)
+      continue
+    }
+
+    throw new Error(`line ${line}:${column}: unexpected character ${JSON.stringify(c)}`)
   }
 
-  const finalLine = lines.length
-  while (indents.length > 1) {
-    indents.pop()
-    tokens.push({ kind: 'dedent', text: '', line: finalLine, column: 1 })
-  }
-  tokens.push({ kind: 'eof', text: '', line: finalLine, column: 1 })
+  tokens.push({ kind: 'eof', text: '', line, column })
   return tokens
-}
-
-function stripComment(line: string): string {
-  let quote: string | null = null
-  for (let i = 0; i < line.length - 1; i++) {
-    const c = line[i]!
-    if ((c === '"' || c === "'") && line[i - 1] !== '\\') quote = quote === c ? null : quote ?? c
-    if (!quote && c === '/' && line[i + 1] === '/') return line.slice(0, i)
-  }
-  return line
 }
