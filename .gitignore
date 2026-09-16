@@ -1,6 +1,4 @@
 node_modules/
-.node_modules/
 dist/
-**/.vs
-**/.vscode/*
-**/.DS_Store
+*.log
+.DS_Store

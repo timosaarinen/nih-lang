@@ -1,30 +1,15 @@
 {
   "compilerOptions": {
-    "target": "es2022",
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "rootDir": ".",
     "outDir": "dist",
-    "sourceMap": true,
-    "module": "es2022",
-    "lib": ["es2022"],
-    "esModuleInterop": true,
-
-    "allowJs": true,
-    "allowSyntheticDefaultImports": false,
-    "emitDecoratorMetadata": true,
-    "experimentalDecorators": true,
-    "useDefineForClassFields": true,
-    "resolveJsonModule": true,
-    "skipLibCheck": true,
-    "moduleResolution": "node",
-
-    /* Linting */
-    "alwaysStrict": true,
     "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true,
-    "forceConsistentCasingInFileNames": true
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "skipLibCheck": true,
+    "sourceMap": true
   },
-  "compileOnSave": false, //true,
-  "exclude": ["./src/**/*.test.ts"],
-  "include": ["./src/**/*"]
+  "include": ["src/**/*.ts", "test/**/*.ts"]
 }
