@@ -1,120 +1,88 @@
-# NIH v2 design
+# NIH v3 design
 
-NIH is a general-purpose language with a deliberately portable computational core. The same ordinary function should be usable by CPU code and GPU code unless the function asks for a capability that only one side has.
+NIH is a small general-purpose systems/numeric language whose first hard problem is unified CPU/GPU programming. V3 adds a second hard requirement: the compiler must be a good API for coding agents without turning human source into an AST serialization format.
 
-## The important rule
+## 1. Source is for people and Git
 
-**Targets are capabilities, not separate languages.**
+`.nih` is ordinary UTF-8 text. Whitespace is non-semantic. Blocks use braces and statements use semicolons. The formatter produces one deterministic presentation.
 
-- `fn`: shared/portable code. CPU-executable and GPU-translatable.
-- `cpu fn`: unrestricted host-side code. I/O, files, sockets, OS APIs, allocation-heavy work, tooling.
-- `gpu fn`: GPU-side code. It can call shared functions but not CPU-only functions.
+Identifiers use `_`; `-` always means subtraction. Syntax should remain unambiguous after minification.
 
-That makes the common path boring: vector math, geometry, noise, SDFs, BRDFs, image operations, simulation kernels and numeric utility code are written once.
+## 2. Semantics are for tools and agents
 
-The compiler intentionally has no automatic magic that guesses where expensive work should run. Placement stays explicit; code reuse does not.
+After parsing/type checking, NIH exposes a semantic graph. V3 graph nodes cover functions, compile-time parameters, runtime parameters, locals, calls and literals. Edges currently model calls. Function nodes include target, inferred effects and executable capabilities.
 
-## Source syntax: agent-native, meatbag-readable
+The graph hash is SHA-256 over canonical formatted semantics, so indentation/comments do not create false concurrency conflicts.
 
-Whitespace is **never semantic** in NIH v2.
+The semantic graph is **not** a persistent database and is not the source of truth. It can always be rebuilt from `.nih`.
+
+## 3. Checked patch protocol
+
+Agent edits use optimistic concurrency:
+
+1. query graph and receive hash `H`
+2. construct operations against semantic IDs
+3. submit with `expect: H`
+4. compiler rejects if current hash != `H`
+5. operations mutate the parsed program
+6. full checker runs again
+7. deterministic source is produced
+
+This gives agents small edit surfaces without abandoning normal Git workflows.
+
+## 4. CPU/GPU target model
+
+- `fn`: shared portable code
+- `cpu fn`: host-only code/effects
+- `gpu fn`: device-side code
+
+Portable/GPU functions may not call CPU-only functions or builtins. V3 begins transitive effect inference (`print` → `io`) in the semantic graph. Longer-term the checker should move from hardcoded target exceptions toward a compact capability/effect lattice.
+
+## 5. Compile time is the same language
+
+Inspired by Mojo, NIH visually separates compile-time and runtime arguments:
 
 ```nih
-fn pulse(x: f32, t: f32) -> f32 {
-  0.5 + 0.5 * sin(x * 6.2831853 + t)
-}
+fn tile[SIZE: i32](x: f32) -> f32 { ... }
+tile[16](x);
 ```
 
-is the same program as:
+`comptime if` is evaluated during specialization. V3 accepts scalar value parameters only (`i32/u32/f32/bool`). The CPU interpreter binds them directly; WGSL emission creates concrete specialized functions.
 
-```nih
-fn pulse(x:f32,t:f32)->f32{0.5+0.5*sin(x*6.2831853+t)}
+Type parameters, constraints and target introspection are intentionally deferred until real kernels demand them.
+
+## 6. Backend pipeline
+
+Current bootstrap:
+
+```text
+source → AST → checker ─┬→ semantic graph / patches / formatter
+                        ├→ CPU interpreter
+                        └→ specialization → WGSL
 ```
 
-Rules:
+Next:
 
-- `{}` define blocks.
-- `;` terminates statements.
-- a final expression may omit `;` immediately before `}` and becomes the block's value.
-- spaces, tabs and newlines are formatting only.
-- `//` and `/* ... */` comments are supported.
-- identifiers use letters/digits/`_`; `-` is always subtraction, so compact source stays unambiguous.
-- the formatter owns presentation; the parser owns structure.
+```text
+source → typed semantic layer → SSA-ish backend IR → CPU/WASM/WGSL/SPIR-V/etc.
+```
 
-Why: source will increasingly be authored, transformed and patched by software agents. Invisible layout should not change semantics, and a patch should remain valid if a formatter, model, transport or copy/paste path changes indentation.
+The semantic graph and backend IR have different jobs. Agent tooling should not need to manipulate SSA for ordinary source edits.
 
-Token count is also a consideration: repeated indentation is not free context. Exact tokenization varies by model, but explicit compact source can be emitted without carrying indentation on every nested line. NIH should optimize for **unambiguous structure per token**, not clever token golf that makes code harder to reason about.
+## 7. Graphics as language pressure test
 
-Agent-oriented language rules should prefer:
+The rotating triangle and portal are regression tests for the language. Graphics APIs should stay thin: resource creation, command recording, frame state, backend submission. Numeric/shader logic belongs in NIH.
 
-- explicit local delimiters and boundaries
-- deterministic formatting
-- few context-sensitive grammar rules
-- one canonical spelling for important constructs
-- diagnostics with exact source spans
-- syntax that is safe to generate in fragments
-- easy AST/source round-tripping
-- no semantic dependence on column position
+The portal benchmark is specifically useful because it pressures vectors, compile-time quality specialization, loops, textures, storage, compute, temporal state and debugging without requiring a giant application first.
 
-Human-oriented source should still be pleasant after formatting. These goals are compatible.
+## 8. Non-goals
 
-## Compiler pipeline
+NIH is not trying to be:
 
-1. whitespace-insensitive lexer
-2. parser -> source AST
-3. type/capability checking
-4. shared typed program representation
-5. CPU interpreter (debug/reference execution)
-6. WGSL emitter (GPU bootstrap backend)
+- Python-compatible
+- C++ with nicer punctuation
+- an AST database pretending to be a language
+- a shader DSL embedded in another host language
+- a language whose complexity is justified by compiler-theory elegance
 
-Next backends should hang off the same checked representation:
-
-- CPU native: LLVM or Cranelift
-- CPU/WASM: WebAssembly
-- GPU: SPIR-V and/or WGSL
-- debug: interpreter with deterministic stepping
-
-The typed IR should eventually replace the AST as the optimization boundary. Whole-program optimization belongs after target/capability analysis so shared code can specialize differently for CPU and GPU without splitting the source language.
-
-## Types
-
-The bootstrap starts with the intersection that matters for CPU/GPU work:
-
-`i32 u32 f32 bool vec2 vec3 vec4`
-
-`string` exists on CPU only. Vectors are language types, not a graphics-library convention. Swizzling is language syntax.
-
-Future types: `f16`, matrices, structs, arrays/slices, pointers/references with address spaces, textures, samplers, atomics and user-defined numeric types.
-
-## GPU proof before GPU abstraction
-
-NIH should earn its GPU design by drawing pixels early.
-
-The first practical ladder is:
-
-1. rotating triangle using NIH-generated WGSL helpers
-2. the same rotating triangle with a procedural portal surface
-3. full-screen portal benchmark
-4. compute/storage-buffer tests
-5. explicit native NIH vertex/fragment/compute entry declarations
-
-During the bootstrap, tiny WGSL stage wrappers are acceptable for WebGPU builtins and uniforms. Numeric/render logic must live in NIH. Once the required semantics are proven, stage IO becomes native NIH syntax rather than inventing a large annotation system up front.
-
-## What NIH should not copy from Mojo
-
-NIH should learn from Mojo's ambition without inheriting a large Python-compatibility surface or making the language feel like a collection of compiler implementation details. The design target is small enough to hold in one programmer's head.
-
-Prefer:
-
-- one obvious spelling
-- explicit capability boundaries
-- few context-sensitive rules
-- data-oriented value types
-- excellent diagnostics
-- fast edit/run/debug loop
-- syntax that survives copy/paste, generated patches and git diffs
-
-Avoid feature accumulation as a proxy for power.
-
-## Self-hosting
-
-TypeScript is the bootstrap implementation, not a language commitment. NIH should become able to compile increasing portions of itself once the type system, memory model and native/WASM backend are mature enough. Do not block useful language/GPU experiments on premature self-hosting.
+The test is practical: can one programmer or one agent understand enough of NIH to make a correct change with a small context window?

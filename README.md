@@ -1,114 +1,136 @@
 # NIH
 
-**A small, pragmatic language for CPU + GPU code — designed for agents, still pleasant for meatbags.**
+**One small language for CPU + GPU code, designed for agents and still pleasant for meatbags.**
 
-NIH v2 is a clean restart of the original NIH language experiment and absorbs the useful ideas from **OpenGL2030**. The central bet is simple:
+NIH v3 is the third clean iteration of the experiment. It absorbs the useful parts of OpenGL2030, steals heterogeneous-compute ideas from Mojo, and steals the strongest agent/compiler interaction idea from Zero: **agents should patch meaning, not character ranges**.
 
-> You should not need one language for the CPU, another for shaders, and a pile of glue pretending they are the same program.
+The central bets are:
 
-Write ordinary numeric code once. Run it on the CPU. Reuse it from GPU functions. Debug GPU-portable functions on the CPU. Keep the host/device boundary explicit without maintaining two implementations of your math.
+1. CPU and GPU numeric code should be the same language.
+2. Plain `.nih` text stays the Git-friendly source of truth.
+3. The compiler exposes a typed semantic graph so agents do not need to shovel whole files through text search/replace.
+4. Compile-time specialization is normal language syntax, not a second template/preprocessor language.
+5. Every semantic agent patch is concurrency-checked and compiler-verified.
 
-This repo is early and intentionally opinionated. API and syntax changes are expected.
+This repo is intentionally early and opinionated. Syntax and APIs can still change aggressively.
 
-## 30-second demo
+## Same code, CPU and GPU
 
 ```nih
 fn pulse(x: f32, t: f32) -> f32 {
-  0.5 + 0.5 * sin(x * 6.2831853 + t)
+  0.5 + 0.5 * sin(x * 6.2831853 + t);
 }
 
 cpu fn main() -> f32 {
-  p = pulse(0.25, 1.0);
-  print("CPU says", p);
-  p
+  pulse(0.25, 1.0);
 }
 
 gpu fn pixel(x: f32, t: f32) -> vec4 {
   p = pulse(x, t);
-  vec4(p, p * 0.35, 1.0 - p, 1.0)
+  vec4(p, p * 0.35, 1.0 - p, 1.0);
 }
 ```
 
-`pulse` is not a shader-language copy. It is the same function used by both targets.
+`pulse` is one function. The CPU interpreter can execute it and the WGSL backend can pull the same function into GPU output.
 
-And whitespace is not syntax. This means the following is exactly the same program:
+Whitespace is presentation, never syntax. This is the same program:
 
 ```nih
-fn pulse(x:f32,t:f32)->f32{0.5+0.5*sin(x*6.2831853+t)}
+fn pulse(x:f32,t:f32)->f32{0.5+0.5*sin(x*6.2831853+t);}
 ```
 
-Humans can format NIH beautifully. Agents can emit or patch compact structural source without invisible indentation changing meaning.
+Canonical formatting exists for humans and deterministic diffs:
 
 ```bash
-npm install
-npm run build
-node dist/src/cli.js run examples/unified.nih
-node dist/src/cli.js gpu examples/unified.nih pixel
+nih fmt foo.nih
+nih fmt foo.nih --write
 ```
 
-The second command emits WGSL and automatically includes shared functions needed by `pixel`.
+## Mojo idea worth stealing: explicit compile-time values
 
-## Practical GPU tests
+Square brackets are compile-time arguments; parentheses are runtime arguments.
 
-NIH now has a real-pixels-first test ladder rather than designing GPU abstractions indefinitely.
+```nih
+fn gain[G: f32](x: f32) -> f32 {
+  x * G;
+}
+
+fn quality[HIGH: bool](x: f32) -> f32 {
+  comptime if HIGH {
+    gain[1.25](x);
+  } else {
+    gain[0.75](x);
+  }
+}
+
+gpu fn shade(x: f32) -> f32 {
+  quality[false](x);
+}
+```
+
+The GPU backend specializes `quality[false]` and `gain[0.75]` before emitting WGSL. There is no runtime generic machinery in the shader.
+
+V3 currently implements **value** compile-time parameters (`i32`, `u32`, `f32`, `bool`). Compile-time type parameters and constraints are a later step; they should earn their complexity first.
+
+## Zero idea worth stealing: semantic agent operations
+
+Text remains canonical in Git, but the compiler also exposes a semantic graph:
 
 ```bash
-npm run build:demos
-# serve runtime/web with any local HTTP server
+nih graph examples/gpu_portal.nih
+nih query examples/gpu_portal.nih portal_surface
 ```
 
-Open:
+Functions have stable symbol IDs such as `fn:portal_surface`. Parameters, compile-time parameters, locals, calls and literals receive semantic IDs too. The graph contains call edges, inferred effects/capabilities and a SHA-256 hash of the canonical program semantics.
 
-1. `runtime/web/triangle.html` — a rotating triangle. Rotation and color are NIH code compiled to WGSL and executed by WebGPU.
-2. `runtime/web/portal.html` — the **same rotating triangle**, but the fragment logic is replaced with NIH procedural tunnel/cloud/portal code.
+An agent can submit a checked patch:
 
-The browser wrapper is intentionally tiny: it only supplies WebGPU stage builtins, frame uniforms and draw submission. The reusable shader logic is NIH. Native NIH vertex/fragment/compute entry syntax comes after these practical tests tell us what it actually needs.
+```json
+{
+  "expect": "<semantic-graph-hash>",
+  "ops": [
+    { "op": "set-literal", "node": "lit:portal_surface:0", "value": 1.8 },
+    { "op": "rename-function", "from": "fbm4", "to": "portal_fbm" }
+  ]
+}
+```
 
-See [docs/PORTAL.md](docs/PORTAL.md) for the plan to turn the portal into a serious visual benchmark rather than stopping at a cute shader.
+```bash
+nih patch examples/gpu_portal.nih patch.json
+nih patch examples/gpu_portal.nih patch.json --write
+```
 
-## Target model
+If `expect` no longer matches, the patch is rejected as stale. If the resulting program fails type/capability checking, the patch is rejected. No best-effort text surgery.
+
+The first patch operations are deliberately small: literal replacement, function rename and target change. The protocol can grow around real agent workloads instead of inventing a giant compiler-edit API upfront.
+
+See [docs/AGENTS.md](docs/AGENTS.md).
+
+## Target + capability model
 
 | NIH | Meaning |
 | --- | --- |
-| `fn` | portable/shared: CPU-executable and GPU-translatable |
-| `cpu fn` | host code; may use CPU-only capabilities such as strings/I/O |
-| `gpu fn` | GPU code; may call portable functions, never CPU-only ones |
+| `fn` | shared/portable; CPU-executable and GPU-translatable |
+| `cpu fn` | host code; may use CPU-only effects such as I/O |
+| `gpu fn` | GPU-side code; may call shared functions, never CPU-only ones |
 
-This is a capability boundary, not three languages.
+The semantic graph additionally infers effects transitively. Today `print` introduces `io`; this is the seed of a more general effect/capability system.
 
-## Source model
+## Practical GPU tests
 
-NIH v2 source is deliberately friendly to both software agents and people:
+The graphics work remains pixels-first:
 
-- whitespace-insensitive; indentation is presentation only
-- `{}` are explicit blocks
-- `;` is an explicit statement terminator
-- final block expressions may omit `;`
-- deterministic formatting can be applied without changing semantics
-- source may be compacted without changing semantics
-- no tab-vs-spaces language rule because neither matters
-- comments: `//` and `/* ... */`
-- identifiers use `_`, never `-`; subtraction is unambiguous even in minified source
+1. `runtime/web/triangle.html` — real WebGPU rotating triangle using NIH-generated WGSL.
+2. `runtime/web/portal.html` — same geometry, procedural tunnel/cloud portal written in NIH.
+3. next: full-screen portal benchmark, then volumetric/domain-warped/temporally stable simulation work.
 
-Exact LLM tokenization varies, but repeated indentation is not free context. More importantly, invisible layout is a poor structural protocol for generated patches. NIH optimizes for **clear structure per token** rather than making whitespace part of the AST.
+```bash
+npm install
+npm run build:demos
+npm run serve:demos
+```
 
-## What already works in the bootstrap
-
-- whitespace-insensitive lexer/parser with braces and semicolons
-- `fn`, `cpu fn`, `gpu fn`
-- `i32`, `u32`, `f32`, `bool`, `string`, `vec2`, `vec3`, `vec4`
-- immutable `=` bindings and mutable `:=` bindings/updates
-- arithmetic, comparisons, boolean operators and `if/else`
-- vector/scalar arithmetic in the CPU reference interpreter
-- `.xyzw` / `.rgba` swizzles
-- portable math including `sin`, `cos`, `sqrt`, `floor`, `fract`, `pow`, `lerp`, `saturate`, `dot`, `length`, `normalize`
-- CPU execution/reference emulation
-- WGSL generation for GPU functions + their shared dependencies
-- capability checking: portable/GPU code cannot accidentally call CPU-only `print`
-- actual WebGPU rotating-triangle demo using NIH-generated WGSL
-- procedural portal-triangle demo using NIH-generated WGSL
-- tiny WebGPU/null host runtime descended from OpenGL2030's command-list/backend split
-- tests with Node's built-in test runner
+V3 compiles the existing v2 triangle and portal NIH sources unchanged. Language work does not get to break the visual regression ladder.
 
 ## CLI
 
@@ -116,44 +138,72 @@ Exact LLM tokenization varies, but repeated indentation is not free context. Mor
 nih check <file.nih>
 nih run   <file.nih> [function]
 nih gpu   <file.nih> [gpu-function]
+nih fmt   <file.nih> [--write]
+nih graph <file.nih>
+nih query <file.nih> <selector>
+nih patch <file.nih> <patch.json> [--write]
 ```
 
-During bootstrap the executable is `node dist/src/cli.js ...`.
+During bootstrap: `node dist/src/cli.js ...`.
 
-## Design stance
+## V3 compiler pipeline
 
-NIH is inspired by C, Lua, Lisp, GLSL/HLSL, Rust/Nim-style modern systems work, and the joy of old-school immediate feedback loops. It is happy to steal good ideas. Hence the name.
+```text
+.nih text
+   ↓
+lexer / parser
+   ↓
+checked typed AST
+   ├────────────→ deterministic formatter
+   ├────────────→ semantic graph + hash → query / checked agent patch
+   ├────────────→ CPU reference interpreter
+   └────────────→ compile-time specialization → WGSL
+```
 
-The language should remain small enough that a working programmer — or coding agent — can understand the important semantics without becoming a compiler researcher. "Power" is not measured by how many features fit in the manual.
+A typed SSA-ish IR is still planned, but V3 deliberately installs the **semantic graph boundary first**. The next IR should serve optimizers/backends without becoming the format agents have to understand for ordinary edits.
 
-Compared with Mojo, NIH shares the ambition of first-class accelerated compute, but does **not** start from Python compatibility and does not want compiler machinery leaking into everyday code. CPU/GPU reuse is the foundation rather than an advanced escape hatch.
+## What works now
 
-Read [docs/DESIGN.md](docs/DESIGN.md) for the compiler/language direction and [docs/GFX.md](docs/GFX.md) for how OpenGL2030 is folded into NIH.
+- whitespace-insensitive `{}` / `;` syntax
+- deterministic formatter
+- `fn`, `cpu fn`, `gpu fn`
+- value compile-time parameters with `[]`
+- `comptime if`
+- CPU execution of specialized functions
+- WGSL specialization of generic shared functions
+- `i32`, `u32`, `f32`, `bool`, `string`, `vec2/3/4`
+- immutable `=` and mutable `:=`
+- vector/scalar arithmetic and `.xyzw` / `.rgba` swizzles
+- portable math (`sin`, `cos`, `sqrt`, `floor`, `fract`, `pow`, `lerp`, `saturate`, `dot`, `length`, `normalize`, ...)
+- CPU/GPU capability checking
+- transitive semantic effect discovery
+- deterministic semantic graph + graph hash
+- graph query API
+- stale-safe checked semantic patch protocol
+- WebGPU triangle + portal regression demos
 
-## Roadmap
+## Design rules
 
-Near-term:
+- **KISS is a constraint, not branding.** A feature must remove more complexity than it introduces.
+- **Agents get structure, humans get prose.** Machine interfaces should be semantic and compact; source and diagnostics should remain readable.
+- **Text stays sovereign.** No opaque binary project format and no mandatory graph database.
+- **Specialization is explicit.** `[]` means compile time, `()` means runtime.
+- **GPU restrictions are capabilities, not a second language.**
+- **Real demos drive design.** The portal is allowed to force new language features; speculative abstractions are not.
 
-1. practical GPU demo ladder: triangle -> portal -> full-screen portal benchmark
-2. typed SSA-ish IR between checker and backends
-3. loops, structs, fixed arrays and address spaces
-4. `f16`, matrices, textures/samplers and storage buffers
-5. native vertex/fragment/compute entry declarations informed by the working demos
-6. source spans + significantly better diagnostics
-7. native CPU backend (Cranelift/LLVM candidate) and WASM
-8. WIDE/live debugging reborn on top of the interpreter + GPU CPU-emulation path
+Read [docs/DESIGN.md](docs/DESIGN.md), [docs/AGENTS.md](docs/AGENTS.md), [docs/GFX.md](docs/GFX.md) and [docs/PORTAL.md](docs/PORTAL.md).
 
-Later:
+## Near-term
 
-- whole-program specialization across CPU/GPU boundaries
-- automatic host/device layout derivation
-- deterministic GPU unit tests through CPU emulation
-- native Vulkan/Metal/D3D12 hosts
-- self-hosting compiler
-
-## OpenGL2030
-
-OpenGL2030 is no longer a separate architectural destination. Its useful ideas live here now: a small runtime, backend abstraction, display/command recording, frame state, vector-oriented graphics ergonomics and a null backend. The old repository remains historical provenance.
+1. full-screen Portal 3 benchmark
+2. semantic patch operations for symbol/local edits and structured insertion
+3. typed SSA-ish backend IR
+4. loops, structs, fixed arrays and address spaces
+5. `f16`, matrices, textures/samplers and storage buffers
+6. native vertex/fragment/compute declarations
+7. compile-time type parameters only where real GPU code proves useful
+8. WASM/native CPU backend
+9. WIDE/live debugging reborn on semantic graph + CPU shader emulation
 
 ## License
 

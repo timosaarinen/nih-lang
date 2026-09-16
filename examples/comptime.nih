@@ -1,0 +1,20 @@
+// Compile-time values use [] so they are visibly different from runtime arguments.
+fn gain[G: f32](x: f32) -> f32 {
+  x * G;
+}
+
+fn quality[HIGH: bool](x: f32) -> f32 {
+  comptime if HIGH {
+    gain[1.25](x);
+  } else {
+    gain[0.75](x);
+  }
+}
+
+cpu fn main() -> f32 {
+  quality[true](8.0);
+}
+
+gpu fn shade(x: f32) -> f32 {
+  quality[false](x);
+}

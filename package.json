@@ -1,9 +1,9 @@
 {
   "name": "nih-lang",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
-  "description": "NIH v2 bootstrap compiler: one language for CPU and GPU code",
+  "description": "NIH v3: agent-native unified CPU/GPU language",
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "check": "npm run build && node --test dist/test/*.test.js",
@@ -13,11 +13,7 @@
     "build:demos": "npm run build && node tools/build-web-demos.mjs",
     "serve:demos": "npm run build:demos && npx --yes serve runtime/web"
   },
-  "devDependencies": {
-    "typescript": "^5.8.3"
-  },
-  "engines": {
-    "node": ">=22"
-  },
+  "devDependencies": { "typescript": "^5.8.3" },
+  "engines": { "node": ">=22" },
   "license": "MIT"
 }
