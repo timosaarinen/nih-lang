@@ -13,11 +13,7 @@ class Parser {
 
   program(): Program {
     const functions: FunctionDecl[] = []
-    this.skipNewlines()
-    while (!this.at('eof')) {
-      functions.push(this.functionDecl())
-      this.skipNewlines()
-    }
+    while (!this.at('eof')) functions.push(this.functionDecl())
     return { functions }
   }
 
@@ -25,7 +21,7 @@ class Parser {
     const line = this.peek().line
     let target: Target = 'shared'
     if (this.atName('cpu') || this.atName('gpu')) target = this.take().text as Target
-    if (!(this.atName('fn') || this.atName('fun'))) this.fail(`expected fn`)
+    if (!(this.atName('fn') || this.atName('fun'))) this.fail('expected fn')
     this.take()
     const name = this.expect('name').text
     this.expect('(')
@@ -41,20 +37,15 @@ class Parser {
     this.expect(')')
     let returnType: TypeName = 'void'
     if (this.maybe('arrow')) returnType = this.parseType()
-    this.expect('newline')
-    this.expect('indent')
-    const body = this.block()
+    const body = this.bracedBlock()
     return { target, name, params, returnType, body, line }
   }
 
-  private block(): Stmt[] {
+  private bracedBlock(): Stmt[] {
+    this.expect('{')
     const out: Stmt[] = []
-    this.skipNewlines()
-    while (!this.at('dedent') && !this.at('eof')) {
-      out.push(this.statement())
-      this.skipNewlines()
-    }
-    this.expect('dedent')
+    while (!this.at('}') && !this.at('eof')) out.push(this.statement())
+    this.expect('}')
     return out
   }
 
@@ -62,26 +53,19 @@ class Parser {
     const line = this.peek().line
     if (this.atName('return')) {
       this.take()
-      if (this.at('newline')) {
-        this.take()
-        return { kind: 'return', line }
-      }
+      if (this.maybe(';')) return { kind: 'return', line }
       const value = this.expression()
-      this.expect('newline')
+      this.expect(';')
       return { kind: 'return', value, line }
     }
     if (this.atName('if')) {
       this.take()
       const condition = this.expression()
-      this.expect('newline')
-      this.expect('indent')
-      const thenBody = this.block()
+      const thenBody = this.bracedBlock()
       let elseBody: Stmt[] = []
       if (this.atName('else')) {
         this.take()
-        this.expect('newline')
-        this.expect('indent')
-        elseBody = this.block()
+        elseBody = this.bracedBlock()
       }
       return { kind: 'if', condition, thenBody, elseBody, line }
     }
@@ -89,11 +73,14 @@ class Parser {
       const name = this.take().text
       const mutable = this.take().kind === ':='
       const value = this.expression()
-      this.expect('newline')
+      this.expect(';')
       return { kind: 'bind', name, mutable, value, line }
     }
     const expr = this.expression()
-    this.expect('newline')
+    // A tail expression may omit the semicolon immediately before '}'. Everywhere
+    // else the explicit terminator keeps parsing independent of layout/newlines.
+    if (!this.at('}')) this.expect(';')
+    else this.maybe(';')
     return { kind: 'expr', expr, line }
   }
 
@@ -147,7 +134,6 @@ class Parser {
     return token.text as TypeName
   }
 
-  private skipNewlines(): void { while (this.maybe('newline')) {} }
   private at(kind: TokenKind): boolean { return this.peek().kind === kind }
   private atName(text: string): boolean { return this.at('name') && this.peek().text === text }
   private maybe(kind: TokenKind): boolean { if (!this.at(kind)) return false; this.i++; return true }
