@@ -9,7 +9,9 @@
     "check": "npm run build && node --test dist/test/*.test.js",
     "test": "npm run check",
     "nih": "node dist/src/cli.js",
-    "demo": "npm run build && node dist/src/cli.js run examples/unified.nih && node dist/src/cli.js gpu examples/unified.nih"
+    "demo": "npm run build:demos && node dist/src/cli.js run examples/unified.nih && node dist/src/cli.js gpu examples/unified.nih",
+    "build:demos": "npm run build && node tools/build-web-demos.mjs",
+    "serve:demos": "npm run build:demos && npx --yes serve runtime/web"
   },
   "devDependencies": {
     "typescript": "^5.8.3"
