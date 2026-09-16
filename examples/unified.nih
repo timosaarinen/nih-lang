@@ -1,18 +1,22 @@
 // One source file, one shared function, CPU and GPU users.
-// Plain fn is the portable subset: it can execute on CPU and compile to GPU code.
+// Whitespace is formatting only. Braces/semicolons define structure.
 
-fn pulse(x: f32, t: f32) -> f32
+fn pulse(x: f32, t: f32) -> f32 {
   0.5 + 0.5 * sin(x * 6.2831853 + t)
+}
 
-fn palette(p: f32) -> vec4
+fn palette(p: f32) -> vec4 {
   vec4(p, p * 0.35, 1.0 - p, 1.0)
+}
 
-cpu fn main() -> f32
-  p = pulse(0.25, 1.0)
-  color = palette(p)
-  print("CPU color", color)
+cpu fn main() -> f32 {
+  p = pulse(0.25, 1.0);
+  color = palette(p);
+  print("CPU color", color);
   p
+}
 
-gpu fn pixel(x: f32, t: f32) -> vec4
-  p = pulse(x, t)
+gpu fn pixel(x: f32, t: f32) -> vec4 {
+  p = pulse(x, t);
   palette(p)
+}
