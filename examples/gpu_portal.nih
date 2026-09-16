@@ -1,0 +1,79 @@
+// The second practical GPU test: exactly the same rotating triangle geometry,
+// but its surface becomes a procedural tunnel/portal. No texture assets.
+
+fn rotate2(p: vec2, angle: f32) -> vec2 {
+  c = cos(angle);
+  s = sin(angle);
+  vec2(c * p.x - s * p.y, s * p.x + c * p.y)
+}
+
+fn hash21(p: vec2) -> f32 {
+  fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453)
+}
+
+fn noise21(p: vec2) -> f32 {
+  i = floor(p);
+  f = fract(p);
+  u = f * f * (vec2(3.0, 3.0) - 2.0 * f);
+  a = hash21(i);
+  b = hash21(i + vec2(1.0, 0.0));
+  c = hash21(i + vec2(0.0, 1.0));
+  d = hash21(i + vec2(1.0, 1.0));
+  lerp(lerp(a, b, u.x), lerp(c, d, u.x), u.y)
+}
+
+fn fbm4(p: vec2) -> f32 {
+  n0 = noise21(p);
+  p1 = rotate2(p * 2.03 + vec2(13.1, 7.7), 0.47);
+  n1 = noise21(p1);
+  p2 = rotate2(p1 * 2.01 + vec2(-5.2, 11.9), 0.31);
+  n2 = noise21(p2);
+  p3 = rotate2(p2 * 1.97 + vec2(17.3, -9.4), -0.28);
+  n3 = noise21(p3);
+  (n0 * 0.53 + n1 * 0.27 + n2 * 0.13 + n3 * 0.07)
+}
+
+fn portal_surface(local: vec2, edge: f32, time: f32) -> vec4 {
+  p = local * 1.72;
+  r = length(p);
+  safe_r = r + 0.085;
+  depth = 1.0 / safe_r;
+
+  dir = p / safe_r;
+  twist_angle = time * 0.34 + depth * 0.22;
+  q = rotate2(dir, twist_angle);
+  cloud_uv = q * (2.5 + 0.38 * depth) + vec2(depth * 0.63 - time * 0.18, time * 0.11);
+  cloud = fbm4(cloud_uv);
+  detail = fbm4(cloud_uv * 2.17 + vec2(8.2, -3.7));
+
+  tunnel = 0.5 + 0.5 * sin(depth * 10.0 - time * 4.7 + cloud * 4.2);
+  spokes = 0.5 + 0.5 * sin((q.x - q.y) * 13.0 + depth * 2.4 + time * 1.6);
+  energy = saturate(cloud * 0.85 + detail * 0.32 + tunnel * 0.38 + spokes * 0.12 - 0.28);
+
+  core = saturate((0.39 - r) * 2.8);
+  ring_rim = saturate((r - 0.72) * 7.0) * saturate((1.22 - r) * 6.0);
+  edge_rim = saturate((0.065 - edge) * 17.0);
+  flash = saturate(0.72 + 0.28 * sin(time * 2.3 + depth * 3.0));
+
+  violet = vec3(0.24, 0.04, 0.62);
+  cyan = vec3(0.05, 0.88, 1.0);
+  white_hot = vec3(1.0, 0.84, 0.53);
+  color0 = violet * (0.35 + energy * 0.75);
+  color1 = color0 + cyan * (energy * energy * 0.9 + tunnel * 0.18);
+  color2 = color1 + white_hot * (core * flash * (0.45 + cloud * 0.55));
+  color3 = color2 + cyan * ring_rim * (0.4 + 0.6 * detail);
+  color4 = color3 + white_hot * edge_rim * (0.45 + 0.55 * cloud);
+
+  vignette = saturate((1.28 - r) * 1.25);
+  color5 = color4 * vignette;
+  vec4(color5, 1.0)
+}
+
+gpu fn triangle_vertex(local: vec2, time: f32, aspect: f32) -> vec4 {
+  p = rotate2(local, time * 0.85);
+  vec4(p.x / aspect, p.y, 0.0, 1.0)
+}
+
+gpu fn triangle_color(local: vec2, edge: f32, time: f32) -> vec4 {
+  portal_surface(local, edge, time)
+}
