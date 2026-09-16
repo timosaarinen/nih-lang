@@ -1,9 +1,12 @@
-fn swap_rb(c: vec4) -> vec4
+fn swap_rb(c: vec4) -> vec4 {
   vec4(c.b, c.g, c.r, c.a)
+}
 
-cpu fn main() -> vec4
-  c = vec4(1.0, 0.5, 0.25, 1.0)
+cpu fn main() -> vec4 {
+  c = vec4(1.0, 0.5, 0.25, 1.0);
   swap_rb(c)
+}
 
-gpu fn post(c: vec4) -> vec4
+gpu fn post(c: vec4) -> vec4 {
   swap_rb(c)
+}
