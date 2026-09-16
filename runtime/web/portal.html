@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>NIH GPU test 02 — portal triangle</title>
+  <style>
+    html,body,canvas{margin:0;width:100%;height:100%;display:block;background:#000}
+    body{overflow:hidden;font:14px ui-monospace,SFMono-Regular,Menlo,monospace;color:#dff}
+    .hud{position:fixed;left:18px;top:16px;z-index:2;text-shadow:0 1px 8px #000}
+    .hud strong{display:block;font-size:17px}.hud span{opacity:.7}
+  </style>
+</head>
+<body>
+  <div class="hud"><strong>NIH GPU test 02 · portal triangle</strong><span id="status">starting WebGPU…</span></div>
+  <canvas id="gpu"></canvas>
+  <script type="module">
+    import { runGpuTriangle } from './gpu-demo.mjs'
+    const status = document.querySelector('#status')
+    runGpuTriangle({ shaderUrl: './generated/portal.wgsl', canvas: document.querySelector('#gpu'), status })
+      .catch(error => { status.textContent = error.message; console.error(error) })
+  </script>
+</body>
+</html>
