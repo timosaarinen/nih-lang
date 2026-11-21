@@ -1,5 +1,6 @@
 node_modules/
 dist/
+dist-web/
 runtime/web/generated/
 *.log
 .DS_Store
