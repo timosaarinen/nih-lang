@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#101113" />
+    <meta name="description" content="NIH WIDE: a live shader playground. Write NIH, compile to WebAssembly, and watch your code become color." />
+    <title>NIH WIDE — Live shader lab</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23151619'/%3E%3Cpath d='M15 47V17h7l20 30h7V17h-7v30L22 17' fill='none' stroke='%23b7f76a' stroke-width='5'/%3E%3C/svg%3E" />
+  </head>
+  <body>
+    <div id="app">
+      <header class="topbar">
+        <a class="brand" href="./" aria-label="NIH WIDE home"><span class="brand-mark">N<span>↗</span></span><span>NIH<span class="brand-divider">/</span><strong>WIDE</strong></span></a>
+        <span class="tagline">Live shader lab</span>
+        <div class="header-actions"><button id="help-toggle" class="quiet" aria-expanded="false" aria-controls="help-panel">Language guide <span aria-hidden="true">↗</span></button><a class="source-link" href="https://github.com/timosaarinen/nih-lang" target="_blank" rel="noopener noreferrer">Source <span aria-hidden="true">↗</span></a></div>
+      </header>
+
+      <main class="workspace">
+        <section class="editor-pane" aria-label="NIH source editor">
+          <div class="pane-heading"><div><span class="eyebrow">01 / SOURCE</span><h1 id="example-title">Chromatic tunnel</h1></div><label class="example-label"><span class="sr-only">Example shader</span><select id="example" title="Choose an example"></select></label></div>
+          <p class="example-description" id="example-description">One function, a few waves, a long way down.</p>
+          <div class="editor-toolbar"><span class="file-label"><span class="file-dot"></span>canvas.nih <span id="draft-state">Local draft</span></span><label class="autorun-label"><input id="autorun" type="checkbox" checked /><span>Live</span></label><button id="run" class="run-button">Run <kbd id="run-shortcut">Ctrl ↵</kbd></button></div>
+          <div id="editor" aria-label="NIH shader source"></div>
+          <div class="editor-footer"><span id="editor-position">Ln 1, Col 1</span><span id="source-revision">Source r1</span><button id="reset-source" class="text-button" title="Restore this example; your current source is kept as a recoverable draft">Reset example</button><button id="recover-draft" class="text-button" hidden>Recover draft</button></div>
+        </section>
+
+        <div id="splitter" class="splitter" role="separator" tabindex="0" aria-label="Resize editor and preview" aria-orientation="vertical" aria-valuemin="30" aria-valuemax="70" aria-valuenow="50"><span></span></div>
+
+        <section class="preview-pane" aria-label="Live shader preview">
+          <div class="preview-heading"><div><span class="eyebrow">02 / CANVAS</span><h2>Code into color.</h2></div><button id="focus" class="icon-button" aria-pressed="false" title="Expand the canvas behind the editor">Immersive <span aria-hidden="true">⤢</span></button></div>
+          <div class="canvas-wrap"><canvas id="canvas" width="320" height="180" aria-label="Animated output of the compiled NIH shader"></canvas><div id="canvas-empty">Compiling your first canvas<span>NIH → WebAssembly → pixels</span></div><div class="canvas-corner"><span class="live-dot" id="live-dot"></span><span id="playback-label">STARTING</span></div></div>
+          <div class="transport"><div class="transport-buttons"><button id="pause" class="transport-button" aria-label="Pause rendering">Pause</button><button id="reset-time" class="transport-button" title="Restart the animation at zero seconds">↺ <span>Restart</span></button><span id="time" class="time">00:00.0</span></div><label class="resolution-label"><span class="sr-only">Rendering resolution</span><select id="resolution"><option value="160">160 × 90</option><option value="320" selected>320 × 180</option><option value="640">640 × 360</option></select></label></div>
+          <div class="status-card" id="status-card" data-kind="busy"><div class="status-heading"><span class="status-indicator"></span><span id="status-title">Starting the compiler</span><span id="displayed-revision"></span></div><p id="status-detail">Your source runs locally, in a separate worker.</p><pre id="diagnostic" hidden></pre></div>
+          <div class="preview-bottom"><span class="engine-badge">CPU <span>WASM</span></span><div class="metrics"><span><strong id="render-ms">—</strong> ms compute</span><span><strong id="display-fps">—</strong> fps presented</span></div></div>
+          <div class="canvas-note"><span class="small-cross">+</span><p>A live canvas for a small language.<br /><span>Change an equation. See what happens.</span></p></div>
+        </section>
+      </main>
+
+      <aside id="help-panel" class="help-panel" hidden><button id="help-close" class="help-close" aria-label="Close language guide">×</button><span class="eyebrow">THE SMALL PRINT</span><h2>Every pixel starts here.</h2><pre><code>fn pixel(uv: vec2, t: f32) -> vec4 {
+  vec4(uv, 0.5 + 0.5 * sin(t), 1.0);
+}</code></pre><p><code>uv</code> runs from 0 to 1, left to right and top to bottom. <code>t</code> is time in seconds. Return red, green, blue, alpha values from 0 to 1.</p><p>Use immutable locals, <code>f32</code>, <code>vec2/3/4</code>, helper functions, arithmetic, swizzles, and numeric builtins such as <code>sin</code>, <code>cos</code>, <code>sqrt</code>, <code>length</code>, <code>dot</code>, <code>min</code>, <code>max</code> and <code>lerp</code>. This first canvas compiler accepts straight-line numerical code. Unsupported constructs produce an error.</p><p>Live mode compiles after a short typing pause. A failed edit keeps the last working canvas. Pause stops the worker; Resume recreates it. Your draft is saved in this browser when storage is available.</p></aside>
+
+      <footer class="app-footer"><span><span class="footer-dot"></span>Built for the joy of making things.</span><span id="build-label">NIH WIDE</span></footer>
+    </div>
+    <script type="module" src="/web/main.ts"></script>
+  </body>
+</html>
